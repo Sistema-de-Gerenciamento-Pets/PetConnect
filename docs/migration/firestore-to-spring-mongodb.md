@@ -17,11 +17,22 @@
 
 **Objetivo:** ter uma cópia íntegra e um retrato dos dados antes de tocar em qualquer coisa.
 
-- [ ] Usuário executa **export completo do Firestore** (`gcloud firestore export gs://<bucket>` ou script Node com Admin SDK) e guarda em local seguro. **Bloqueante — R-01.**
-- [ ] Usuário cola as **Firestore Security Rules** atualmente deployadas. **Bloqueante — R-02.**
-- [ ] Relatório de qualidade de dados (etapa 50): contagem por coleção, % de `dataNascimento` vazio/inválido, `dono` não-nulo, docs sem `sobrenome`/`vacinado`, valores distintos de `genero`/`especie`/`porte`, docs órfãos.
-- [ ] Confirmar destino do export (bucket) e retenção.
+- [x] **Backup dos dados** via `tools/firestore-backup/` (script Node + Admin SDK, **somente leitura, sem Blaze**). O `gcloud firestore export` foi descartado porque exige conta de faturamento. O script salva um JSON por coleção/subcoleção em `output/<timestamp>/` — essa pasta É o backup pré-migração e deve ser guardada em local seguro. **Substitui o bloqueio R-01.**
+- [ ] Usuário roda o script e cola o `report.md` gerado no chat.
+- [ ] Usuário cola as **Firestore Security Rules** atualmente deployadas (Console → Firestore → aba Regras). Não bloqueia FASE 0/1; **bloqueia a FASE 11** — R-02.
+- [x] Relatório de qualidade de dados (etapa 50): gerado automaticamente pelo script — contagem por coleção, `dataNascimento` vazio/inválido, `dono` não-nulo / `dono != userId`, docs sem `sobrenome`/`vacinado`, valores distintos de `genero`/`especie`/`porte`, `userId` órfão, estruturas inesperadas.
 - [ ] Documentos 01–04 (este conjunto) revisados e aprovados pelo usuário.
+
+**Decisões tomadas nesta fase (lado seguro / reversível):**
+
+| Item | Decisão | Motivo |
+|---|---|---|
+| `usuarioID` (B) | preservar como `legacyUsuarioId` em `users` | custo zero, evita perda de dado; descarta-se depois se o relatório confirmar que está sempre ausente/sem uso |
+| `Pets.dono` (C) | preservar como `legacyDono` **só quando** não-nulo e `!= userId`; senão descartar | evita perda caso algum registro use `dono` como dono real |
+| `Localizacoes` raiz (D) | **não migrar**; manter só no backup JSON | o app nunca usou; confirma-se no relatório (total / referências a pet/user) |
+| Backend (F) | **repositório separado** `PetConnect-API` | não mistura toolchain Dart e Java; CI independente; Flutter não se move |
+| Hospedagem (G) | **MongoDB Atlas M0** (grátis, 512 MB, sem cartão) para dev+staging; backend em host free (Render / Railway / Fly.io / Koyeb) | sem faturamento, igual à restrição do Firebase |
+| Página pública QR (H) | fica na **FASE 9**, depois da migração de dados das entidades centrais | não é pré-requisito de nenhuma fase anterior |
 
 **Rollback:** nada foi alterado.
 
@@ -202,15 +213,15 @@ Todas default `false` até a respectiva fase ser validada. Remoção das flags: 
 
 ---
 
-## Pontos que PARAM a migração até decisão do usuário
+## Pontos que PARAM a migração — situação
 
-| Ref | Assunto |
-|---|---|
-| A | Sem export/acesso aos dados reais do Firestore (FASE 0) |
-| B | `usuarioID` — manter como `legacyUsuarioId` ou descartar? |
-| C | `Pets.dono` — descartar ou preservar como `legacyDono`? |
-| D | Coleção raiz `Localizacoes` — arquivar/ignorar ou migrar? |
-| E | Firestore Rules deployadas — conteúdo real (FASE 0) |
-| F | Backend: repo separado vs subpasta `backend/` |
-| G | Hospedagem MongoDB + backend (Atlas free? provedor?) |
-| H | Página pública do QR (RF17–19) entra agora na FASE 9 ou fica depois? |
+| Ref | Assunto | Situação |
+|---|---|---|
+| A | Dados reais do Firestore | ✅ resolvido via `tools/firestore-backup/` (sem Blaze). Pendente: usuário rodar e colar `report.md` |
+| B | `usuarioID` | ✅ decidido: preservar como `legacyUsuarioId` |
+| C | `Pets.dono` | ✅ decidido: preservar como `legacyDono` só se `!= userId` |
+| D | `Localizacoes` raiz | ✅ decidido: não migrar (fica no backup) |
+| E | Firestore Rules deployadas | ⏳ usuário cola as regras (bloqueia só a FASE 11) |
+| F | Backend: repo vs subpasta | ✅ decidido: repositório separado `PetConnect-API` |
+| G | Hospedagem MongoDB + backend | ✅ decidido: Atlas M0 grátis + host free (Render/Railway/Fly/Koyeb) |
+| H | Página pública do QR (RF17–19) | ✅ decidido: permanece na FASE 9 |

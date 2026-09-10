@@ -1,0 +1,13 @@
+{
+  "name": "petconnect-firestore-backup",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backup e auditoria do Firestore do PetConnect (FASE 0 da migracao). Somente leitura, nao requer plano Blaze.",
+  "type": "commonjs",
+  "scripts": {
+    "backup": "node backup.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.2"
+  }
+}
