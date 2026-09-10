@@ -66,7 +66,8 @@ Repo: **https://github.com/AleksGustavo/PetConnect-API** (privado) · pasta loca
 - [x] `GET /api/v1/me` + `PATCH /api/v1/me` (DTOs + Bean Validation). Documento `users` com `firebaseUid` único, `roles`, timestamps, `legacyUsuarioId`.
 - [x] Regra reforçada: controller usa sempre o `firebaseUid` do token, nunca id vindo do corpo.
 - [x] `MeControllerTest` (6): sem token/inválido → 401; 1º acesso provisiona; acessos repetidos não duplicam; `PATCH` atualiza; payload inválido → 400. `FirebaseTokenVerifier` mockado (não precisa de credencial real no CI).
-- [ ] Teste end-to-end com token real do Firebase — pendente (precisa do JSON da conta de serviço dedicada).
+- [x] **Teste end-to-end com ID token real do Firebase** (chave de serviço dedicada): `GET /me` sem token → 401 · com token → 200 e provisiona · 2ª vez → mesmo id · `PATCH` → 200 · token inválido → 401.
+- [x] Ajuste de infra: `firebase-admin` abre um NIO `Selector` na init → falha nesta máquina (bloqueio de loopback AF_UNIX, mesma raiz do erro do APK). Corrigido com `NetHttpTransport`. O **Tomcat** também bate nisso → a API roda em **container Linux** (`docker compose`, host **8090**), não via `mvn spring-boot:run`.
 
 **Rollback:** app ainda não chama o backend; desligar o serviço.
 
