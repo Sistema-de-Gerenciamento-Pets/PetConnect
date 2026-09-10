@@ -42,27 +42,31 @@
 
 ---
 
-## FASE 1 — Esqueleto do backend Spring (sem tocar no app)
+## FASE 1 — Esqueleto do backend Spring (sem tocar no app) — ✅ CONCLUÍDA
 
-- [ ] Criar projeto Spring Boot (Web, Security, Validation, Data MongoDB, Actuator, OpenAPI). Local: **repositório separado** `PetConnect-API` (recomendado) ou subpasta `backend/` — **decisão do usuário, ambiguidade F**. Não mover o Flutter.
-- [ ] Estrutura Monólito Modular: módulos `user`, `pet`, `vaccine`, `appointment`, `medicalrecord`, `location`, `shared` (config, security, error).
-- [ ] `application-{dev,staging,prod}.yml` + variáveis de ambiente. **Nenhum segredo no repo.**
-- [ ] Formato de erro único `{ timestamp, status, code, message }` — sem stack trace pro cliente.
-- [ ] `/api/v1` como prefixo; Swagger em `/swagger-ui`.
-- [ ] Healthcheck (`/actuator/health`) e CI do backend.
-- [ ] MongoDB provisionado (Atlas free tier dev + instância staging) — **decisão do usuário, ambiguidade G**.
+Repo: **https://github.com/AleksGustavo/PetConnect-API** (privado) · pasta local `../PetConnect-API` · Spring Boot 3.4.2 / Java 21.
 
-**Rollback:** apagar o projeto/repo backend. App intacto.
+- [x] Projeto Spring Boot (Web, Security, Validation, Data MongoDB, Actuator, OpenAPI). **Repositório separado** `PetConnect-API` (Flutter não se moveu).
+- [x] Monólito modular: `shared` (config/security/error) + módulos `user`/`pet`/`vaccine`/`appointment`/`medicalrecord`/`location`.
+- [x] `application-{dev,staging,prod}.yml` + env vars. Nenhum segredo no repo (`.gitignore` bloqueia `*serviceAccountKey*`/`*firebase*adminsdk*`).
+- [x] Formato de erro único `{ timestamp, status, code, message }` — `ApiError`/`GlobalExceptionHandler`, sem stack trace.
+- [x] `/api/v1` como prefixo; Swagger em `/swagger-ui.html`; `GET /api/v1/ping` público.
+- [x] `/actuator/health`. Teste de context load com MongoDB embarcado (flapdoodle) — verde.
+- [ ] CI do backend (GitHub Actions) — pendente.
+- [ ] MongoDB Atlas M0 (staging) — só na FASE 3; dev usa Mongo local/Docker.
+
+**Rollback:** apagar o repo backend. App intacto.
 
 ---
 
-## FASE 2 — Autenticação e autorização (backend)
+## FASE 2 — Autenticação e autorização (backend) — ✅ CONCLUÍDA
 
-- [ ] Firebase Admin SDK no backend (credencial via env var / Secret Manager — **nunca** no repo).
-- [ ] Filtro Spring Security: `Authorization: Bearer <Firebase ID Token>` → verifica com Admin SDK → carrega/cria `users` no Mongo (provisionamento no 1º acesso) → popula `SecurityContext` com `firebaseUid` + `roles`.
-- [ ] Endpoint `GET /api/v1/me` (perfil do usuário logado) — primeira rota real.
-- [ ] Regra: **nunca confiar só no ID enviado pelo app** — toda operação valida posse (`tutorId == usuário logado`) no servidor.
-- [ ] Testes: token válido/expirado/ausente, usuário novo, usuário existente.
+- [x] Firebase Admin SDK (`FirebaseConfig`/`FirebaseProperties`) — credencial via `FIREBASE_SERVICE_ACCOUNT` (caminho ou base64), nunca no repo. Sem credencial: sobe e responde 401 nas rotas protegidas.
+- [x] `FirebaseTokenAuthenticationFilter`: `Authorization: Bearer <Firebase ID Token>` → `verifyIdToken` → provisiona/carrega `users` no Mongo (1º acesso) → `SecurityContext` com principal `AuthenticatedUser` (`firebaseUid` + `roles`). 401 no formato `ApiError`.
+- [x] `GET /api/v1/me` + `PATCH /api/v1/me` (DTOs + Bean Validation). Documento `users` com `firebaseUid` único, `roles`, timestamps, `legacyUsuarioId`.
+- [x] Regra reforçada: controller usa sempre o `firebaseUid` do token, nunca id vindo do corpo.
+- [x] `MeControllerTest` (6): sem token/inválido → 401; 1º acesso provisiona; acessos repetidos não duplicam; `PATCH` atualiza; payload inválido → 400. `FirebaseTokenVerifier` mockado (não precisa de credencial real no CI).
+- [ ] Teste end-to-end com token real do Firebase — pendente (precisa do JSON da conta de serviço dedicada).
 
 **Rollback:** app ainda não chama o backend; desligar o serviço.
 
