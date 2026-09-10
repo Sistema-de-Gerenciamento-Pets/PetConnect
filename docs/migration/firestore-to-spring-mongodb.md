@@ -72,24 +72,34 @@ Repo: **https://github.com/AleksGustavo/PetConnect-API** (privado) · pasta loca
 
 ---
 
-## FASE 3 — Migração de dados: `users` + `pets` + `locations` (script)
+## FASE 3 — Migração de dados: `users` + `pets` + `locations` — ✅ CONCLUÍDA (rodada real)
 
-> É **toda** a carga real: 18 usuários, 24 pets, 95 avistamentos. Não há mais nada
-> (subcoleções vazias). Regras de conversão campo a campo: [`firestore-data-report.md`](../database/firestore-data-report.md).
+Motor: `com.petconnect.api.migration` no `PetConnect-API` (`LegacyMigrationService` + `MigrationRunner` no perfil `migration`). Regras de conversão: [`firestore-data-report.md`](../database/firestore-data-report.md).
 
-- [ ] Script de migração (Java/Spring `CommandLineRunner` ou standalone) lê `firestore_backup.json` e grava `users`, `pets`, `locations` no Mongo.
-- [ ] **users:** normaliza `foto`/`imagemUrl`/`photoURL`, `usuarioID`/`uid`→`legacyUsuarioId`, `genero` Homem/Mulher/Outro→enum, datas inválidas→`null`+aviso, `roles=["TUTOR"]`.
-- [ ] **pets:** resolve `tutorId` via `userId`/`userID`; `peso` heterogêneo→`weightKg`; `especie`/`porte` lixo→`OTHER`/`null`+aviso; `dataNascimento` (dd/MM/yyyy | ISO | inválida); gera `publicId`; `status="ACTIVE"`; descarta `dono`/`id`/`datadenascimento`.
-- [ ] **locations:** só as ~65 ligadas a pet válido; `timestamp`→`reportedAt`; `latitude`/`longitude` direto; `telefone`→`reporterContact`; `nomePet`/`nomeTutor`→`legacyPetName`/`legacyTutorName`; `source="PUBLIC_QR"`.
-- [ ] **Imagens do Storage:** toda URL `firebasestorage…` → `photoUrl: null` + `migrationWarnings:["storage-image-lost"]` (bucket desativado, irrecuperável). URLs Cloudinary passam direto.
-- [ ] **Filtro de teste:** excluir da importação os 7 usuários + 3 pets + ~30 locations da lista em [`firestore-data-report.md`](../database/firestore-data-report.md). Registrar a lista excluída no relatório.
-- [ ] Todo doc importado recebe `legacyImport: true` + `migrationWarnings: [...]`.
-- [ ] Grava `migration_audit` por documento (com `warnings` e snapshot cru).
-- [ ] Idempotente: chave natural = `firebaseUid` (users) / `legacyFirestoreId` (pets, locations).
-- [ ] Relatório: migrados / com warning / falhos + lista dos candidatos a limpeza.
-- [ ] Validação manual: amostragem cruzada `firestore_backup.json` ↔ Mongo.
+**Resultado da execução real (2026-09-10) contra `firestore_backup.json`:**
 
-**Rollback:** `db.users.drop()` / `db.pets.drop()` / `db.locations.drop()`. Firestore permanece fonte de verdade. Sem impacto no app.
+| Coleção | Total Firestore | Migrados | Excluídos | Com aviso |
+|---|---|---|---|---|
+| `users` | 18 | **11** | 7 (contas de teste) | 8 |
+| `pets` | 24 | **21** | 3 (`98fXt7…` dono teste, `SYOrB00…` e `rkgJ9H…` órfãos) | 12 |
+| `locations` | 95 | **64** | 31 (30 do pet apagado `9CUlOu8…` + 1 coordenada na Irlanda) | 0 |
+
+Avisos: `storage-image-lost` ×18 · `weight-unparseable` ×1 · `species-unmapped` ×1 · `size-unmapped` ×1 · `name-looks-like-email` ×1 · `placeholder-image` ×1.
+Verificado no Mongo: 0 pets sem `tutorId`, 0 locations sem `petId`, 2 usuários com foto (só as do Cloudinary sobreviveram). `migration_audit`: 96 MIGRATED + 41 SKIPPED.
+
+- [x] Runner lê `firestore_backup.json` (caminho por parâmetro, **não** versionado) e grava `users`/`pets`/`locations`.
+- [x] users: normaliza `foto`/`imagemUrl`/`photoURL`, `usuarioID`/`uid`→`legacyUsuarioId`, `genero`→enum, datas inválidas→`null`+aviso, `roles=["TUTOR"]`.
+- [x] pets: `tutorId` via `userId`/`userID`; `peso` heterogêneo→`weightKg`; `especie`/`porte`→enum (lixo→`OTHER`/`null`+aviso); datas dd/MM/yyyy·ISO·inválida; `publicId` **determinístico** (`UUID.nameUUIDFromBytes`); `status="ACTIVE"`; descarta `dono`/`id`/`datadenascimento`.
+- [x] locations: `timestamp`→`reportedAt`, `latitude`/`longitude`, `telefone`→`reporterContact`, `nomePet`/`nomeTutor`→`legacy*`, `source="PUBLIC_QR"`.
+- [x] Storage: toda URL `firebasestorage…` → `photoUrl: null` + `storage-image-lost`.
+- [x] Filtro de teste aplicado (7 usuários + 3 pets + 31 locations), lista registrada no relatório.
+- [x] `legacyImport: true` + `migrationWarnings[]` em todo doc; `migration_audit` por registro com snapshot cru.
+- [x] Idempotente: cada execução limpa `legacyImport=true` + auditoria e reprocessa.
+- [x] Relatório JSON salvo ao lado do export + resumo no log.
+- [x] Testes: `LegacyMigrationServiceTest` (6) com export sintético cobrindo cada regra.
+- [ ] Validação cruzada amostral manual `firestore_backup.json` ↔ Mongo — pendente (conferir alguns registros a olho).
+
+**Rollback:** `db.users.drop()` / `db.pets.drop()` / `db.locations.drop()` (ou remover só `{legacyImport:true}`). Firestore permanece fonte de verdade. Sem impacto no app.
 
 ---
 
