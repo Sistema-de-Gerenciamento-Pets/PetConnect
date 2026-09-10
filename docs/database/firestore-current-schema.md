@@ -1,7 +1,8 @@
 # Schema atual — Cloud Firestore (`pet-connect-c53f1`)
 
-> Etapa obrigatória 02. Levantado **a partir do código** (`lib/features/**/data/firebase_*_repository.dart` + `domain/*.dart`) e de `docs/modelo-dados-firestore.md`.
-> ⚠️ Não foi possível inspecionar os dados reais (sem acesso ao console / export). Volumes, valores nulos reais e documentos legados são **desconhecidos** — ver R-01 na auditoria.
+> Etapa obrigatória 02. Levantado a partir do código **e do export real** `firestore_backup.json` (2026-09-10).
+> 📊 Volumes/valores reais e problemas de dados: ver [`firestore-data-report.md`](firestore-data-report.md).
+> ⚠️ **Correção pós-export:** as subcoleções de `Pets` (`vacinas`, `historicoMedico`, `consultas`, `localizacoes`) **não existem no Firestore** — zero documentos. Foram desenhadas no app Feature-First atual mas nunca populadas em produção. Os dados reais (18 usuários, 24 pets, 95 avistamentos) são de uma **versão anterior** do app. A coleção raiz `Localizacoes` **tem dados reais com GPS** e será migrada.
 
 Legenda de origem: **base** = já existia antes deste ciclo de desenvolvimento · **app** = criado/escrito pelo app Flutter atual.
 
@@ -57,7 +58,11 @@ Legenda de origem: **base** = já existia antes deste ciclo de desenvolvimento �
 
 ---
 
-### Subcoleção `Pets/{petId}/vacinas`
+> ⚠️ **As 4 subcoleções abaixo têm ZERO documentos no Firestore real.** O schema
+> aqui é o que o código do app *escreveria*, não o que existe. Na migração elas
+> nascem vazias no MongoDB — não há dado a converter.
+
+### Subcoleção `Pets/{petId}/vacinas` — *vazia em produção*
 
 - **Doc ID:** auto (`.add`). **Repo:** `FirebaseVacinaRepository`.
 
@@ -72,7 +77,7 @@ Legenda de origem: **base** = já existia antes deste ciclo de desenvolvimento �
 
 ---
 
-### Subcoleção `Pets/{petId}/historicoMedico`
+### Subcoleção `Pets/{petId}/historicoMedico` — *vazia em produção*
 
 - **Doc ID:** **gerado no client** (`novoId` → `.doc(id).set(...)`), porque os anexos sobem antes do doc existir.
 - **Repo:** `FirebaseHistoricoMedicoRepository`.
@@ -87,7 +92,7 @@ Legenda de origem: **base** = já existia antes deste ciclo de desenvolvimento �
 
 ---
 
-### Subcoleção `Pets/{petId}/consultas`
+### Subcoleção `Pets/{petId}/consultas` — *vazia em produção*
 
 - **Doc ID:** auto (`.add`). **Repo:** `FirebaseConsultaRepository` (sem delete — cancelar = mudar `status`).
 
@@ -102,9 +107,10 @@ Legenda de origem: **base** = já existia antes deste ciclo de desenvolvimento �
 
 ---
 
-### Subcoleção `Pets/{petId}/localizacoes`
+### Subcoleção `Pets/{petId}/localizacoes` — *vazia em produção*
 
 - **Doc ID:** auto (`.add`). **Repo:** `FirebaseLocalizacaoRepository` (só `watch` + `create`).
+- ⚠️ Não confundir com a coleção **raiz** `Localizacoes` (95 docs reais, GPS) — ver abaixo.
 
 | Campo | Tipo | Obrigatório | Origem | Observações |
 |---|---|---|---|---|
@@ -115,31 +121,49 @@ Legenda de origem: **base** = já existia antes deste ciclo de desenvolvimento �
 
 ---
 
-## Coleção raiz `Localizacoes` (órfã)
+## Coleção raiz `Localizacoes` — **95 docs reais, com GPS**
 
-- Aparece no console (mencionada em `docs/modelo-dados-firestore.md`) mas **o app atual nunca lê nem escreve nela** — a feature de localização usa a subcoleção `Pets/{petId}/localizacoes`.
-- Schema real desconhecido. Decisão do usuário em sessão anterior: **não reconciliar** — a feature foi refeita do zero na subcoleção.
-- **Pendência de migração:** decidir se `Localizacoes` raiz contém dados históricos a preservar ou pode ser ignorada/arquivada (ver ambiguidade D no chat).
+O app Feature-First atual não usa esta coleção (usa a subcoleção, que está vazia).
+Mas ela contém o **histórico real da funcionalidade "pet perdido"** de uma versão anterior.
+Schema uniforme nos 95 docs:
+
+| Campo | Tipo | Observações |
+|---|---|---|
+| *(doc id)* | string (auto) | |
+| `latitude` | number | GPS real |
+| `longitude` | number | GPS real |
+| `telefone` | string | contato de quem avistou (alguns com espaço) |
+| `petId` | string → `Pets` | 65 registros apontam para pet existente; **30 apontam para pet apagado** (`9CUlOu8…`) |
+| `nomePet` | string | denormalizado |
+| `nomeTutor` | string | denormalizado |
+| `timestamp` | string ISO 8601 | 2024-12-04 → 2025-08-14 |
+
+**Migração (decisão D revista): SIM, migrar.** Vira a collection `locations` no MongoDB
+(que já prevê `latitude`/`longitude`). Registros órfãos entram com `petId: null` +
+`legacyPetId`/`legacyPetName`/`legacyTutorName`. Detalhes e ruído de teste em
+[`firestore-data-report.md`](firestore-data-report.md).
 
 ---
 
 ## Regras de segurança (Firestore Rules)
 
-**Não versionadas neste repositório.** `firebase.json` não referencia `firestore.rules`. O conteúdo real deployado é desconhecido — em sessões anteriores foram exibidas regras muito permissivas (rascunho em `docs/seguranca.md`), mas não há confirmação de que sejam as que estão no ar. **Risco R-02.** Necessário o usuário colar as regras atuais do console.
+**Não versionadas neste repositório.** `firebase.json` não referencia `firestore.rules`. O conteúdo real deployado é desconhecido — e o export confirma o risco: a coleção `Localizacoes` foi escrita por uma versão antiga sem controle de dono, o que sugere regras permissivas. **Risco R-02.** Necessário o usuário colar as regras atuais do console.
 
 ---
 
 ## Resumo de problemas de dados a tratar na migração
 
+Números e regras de conversão detalhadas em [`firestore-data-report.md`](firestore-data-report.md).
+
 | # | Problema | Coleções afetadas |
 |---|---|---|
-| 1 | Datas como string `dd/MM/yyyy`, podendo estar vazias ou malformadas | todas |
-| 2 | `peso` é string com unidade (`"12kg"`) — precisa separar valor + unidade | `Pets` |
-| 3 | `dono` redundante e frequentemente `null` | `Pets` |
-| 4 | `usuarioID` sem uso confirmado — manter ou descartar? | `Usuarios` |
-| 5 | Ausência de `createdAt`/`updatedAt` | todas |
-| 6 | Possíveis docs com schema pré-`sobrenome` / pré-`vacinado` | `Usuarios`, `Pets` |
-| 7 | `genero`/`especie`/`porte` são texto livre — normalizar para enum/catálogo | `Usuarios`, `Pets` |
-| 8 | Coleção raiz `Localizacoes` órfã | `Localizacoes` |
-| 9 | `historicoMedico` com id de client vs `.add()` nas outras subcoleções | subcoleções de `Pets` |
-| 10 | Exclusão de conta não apaga `consultas`/`localizacoes` → possíveis órfãos já no banco | subcoleções de `Pets` |
+| 1 | Datas em string: `dd/MM/yyyy`, ISO `yyyy-MM-dd`, vazias, e **inválidas** (`1/1/1`, `13/32/321`) | `Usuarios`, `Pets` |
+| 2 | `peso` heterogêneo: string, número, com unidade (`"10 KG"`), lixo (`"byi"`), vazio, null | `Pets` |
+| 3 | `dono` redundante — **nunca** difere de `userId` → descartar | `Pets` |
+| 4 | `usuarioID` (UUID) sem uso como FK → `legacyUsuarioId` | `Usuarios` |
+| 5 | Ausência de `createdAt`/`updatedAt` (exceto 3 pets e 1 usuário) | quase todas |
+| 6 | Schema drift: `datadenascimento`, `imagemUrl`/`photoURL`, `userID`, `uid`, docs "Marcola"/"Gabrielly" antigos; só 2 usuários têm `sobrenome` | `Usuarios`, `Pets` |
+| 7 | `genero` (`Homem`/`Mulher`/`Outro`), `especie` (ausente em 10/24, lixo), `porte` (case/lixo) → enums | `Usuarios`, `Pets` |
+| 8 | **~28 imagens no Firebase Storage** — verificar se ainda resolvem; se sim, re-upload p/ Cloudinary | `Usuarios`, `Pets` |
+| 9 | 2 pets órfãos + ~7 contas de teste + ruído em `Localizacoes` (30 órfãs, 1 na Irlanda, 13 duplicadas) | todas |
+| 10 | `Localizacoes` raiz: 95 docs GPS a migrar para `locations` (30 com `petId` órfão) | `Localizacoes` |

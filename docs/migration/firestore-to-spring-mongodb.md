@@ -28,8 +28,11 @@
 | Item | Decisão | Motivo |
 |---|---|---|
 | `usuarioID` (B) | preservar como `legacyUsuarioId` em `users` | custo zero, evita perda de dado; descarta-se depois se o relatório confirmar que está sempre ausente/sem uso |
-| `Pets.dono` (C) | preservar como `legacyDono` **só quando** não-nulo e `!= userId`; senão descartar | evita perda caso algum registro use `dono` como dono real |
-| `Localizacoes` raiz (D) | **não migrar**; manter só no backup JSON | o app nunca usou; confirma-se no relatório (total / referências a pet/user) |
+| `Pets.dono` (C) | **descartar** | o export confirma: `dono` é null/`""`/`==userId` em 100% dos casos, nunca aponta outro usuário |
+| `Localizacoes` raiz (D) | ~~não migrar~~ → **MIGRAR** para `locations` | o export revelou 95 docs reais com GPS (histórico da feature "pet perdido"). 65 ligam a pet existente; 30 órfãs entram com `petId: null` + refs textuais. Ruído de teste é marcado, não apagado |
+| Subcoleções de `Pets` | **nada a migrar** | `vacinas`/`historicoMedico`/`consultas`/`localizacoes` têm **0 documentos** no Firestore — nascem vazias no Mongo. As FASES 6–8 passam a ser só "expor a API + trocar o repositório no app" |
+| Imagens no Firebase Storage (novo) | script tenta baixar e re-subir ao Cloudinary; falha → `photoUrl: null` + aviso | ~28 URLs `firebasestorage…`; Storage exige Blaze. **Pendente: usuário confirmar se as URLs ainda abrem** |
+| Dados de teste (novo) | migrar tudo com `legacyImport: true` + `migrationWarnings[]`; **não apagar** | ~7 contas de teste, 2 pets órfãos, ~44 `Localizacoes` de teste. Usuário limpa depois pelo app/console. Rollback trivial |
 | Backend (F) | **repositório separado** `PetConnect-API` | não mistura toolchain Dart e Java; CI independente; Flutter não se move |
 | Hospedagem (G) | **MongoDB Atlas M0** (grátis, 512 MB, sem cartão) para dev+staging; backend em host free (Render / Railway / Fly.io / Koyeb) | sem faturamento, igual à restrição do Firebase |
 | Página pública QR (H) | fica na **FASE 9**, depois da migração de dados das entidades centrais | não é pré-requisito de nenhuma fase anterior |
@@ -64,16 +67,23 @@
 
 ---
 
-## FASE 3 — Migração de dados: `users` + `pets` (script, ainda sem trocar o app)
+## FASE 3 — Migração de dados: `users` + `pets` + `locations` (script)
 
-- [ ] Script de migração (Java/Spring `CommandLineRunner` ou standalone) lê o export do Firestore e grava `users` e `pets` no Mongo.
-- [ ] Converte datas, separa `peso`, gera `publicId`, mapeia enums, preenche `roles=["TUTOR"]`, `status="ACTIVE"`.
+> É **toda** a carga real: 18 usuários, 24 pets, 95 avistamentos. Não há mais nada
+> (subcoleções vazias). Regras de conversão campo a campo: [`firestore-data-report.md`](../database/firestore-data-report.md).
+
+- [ ] Script de migração (Java/Spring `CommandLineRunner` ou standalone) lê `firestore_backup.json` e grava `users`, `pets`, `locations` no Mongo.
+- [ ] **users:** normaliza `foto`/`imagemUrl`/`photoURL`, `usuarioID`/`uid`→`legacyUsuarioId`, `genero` Homem/Mulher/Outro→enum, datas inválidas→`null`+aviso, `roles=["TUTOR"]`.
+- [ ] **pets:** resolve `tutorId` via `userId`/`userID`; `peso` heterogêneo→`weightKg`; `especie`/`porte` lixo→`OTHER`/`null`+aviso; `dataNascimento` (dd/MM/yyyy | ISO | inválida); gera `publicId`; `status="ACTIVE"`; descarta `dono`/`id`/`datadenascimento`.
+- [ ] **locations:** `timestamp`→`reportedAt`; liga `petId` ao `pets._id` quando existe, senão `petId: null` + `legacyPetId`/`legacyPetName`/`legacyTutorName`; `source="LEGACY"`.
+- [ ] **Imagens do Storage:** para cada URL `firebasestorage…`, baixar e re-subir ao Cloudinary; falha/404 → `photoUrl: null` + aviso. (Depende da resposta do usuário sobre as URLs.)
+- [ ] Todo doc importado recebe `legacyImport: true` + `migrationWarnings: [...]`. Nada é filtrado/apagado.
 - [ ] Grava `migration_audit` por documento (com `warnings` e snapshot cru).
-- [ ] Idempotente (reexecutável): chave natural = `firebaseUid` (users) / (`tutorId` + `nome` + origem) ou `legacyQrCodeId` (pets).
-- [ ] Relatório: migrados / com warning / falhos.
-- [ ] Validação manual: amostragem cruzada Firestore ↔ Mongo.
+- [ ] Idempotente: chave natural = `firebaseUid` (users) / `legacyFirestoreId` (pets, locations).
+- [ ] Relatório: migrados / com warning / falhos + lista dos candidatos a limpeza.
+- [ ] Validação manual: amostragem cruzada `firestore_backup.json` ↔ Mongo.
 
-**Rollback:** `db.users.drop()` / `db.pets.drop()` (Firestore permanece fonte de verdade). Sem impacto no app.
+**Rollback:** `db.users.drop()` / `db.pets.drop()` / `db.locations.drop()`. Firestore permanece fonte de verdade. Sem impacto no app.
 
 ---
 
@@ -103,9 +113,10 @@
 
 ---
 
-## FASE 6 — Migração + feature **Vacinas**
+## FASE 6 — feature **Vacinas**
 
-- [ ] Script migra `Pets/{id}/vacinas` → `vaccines` (resolvendo `petId` do Mongo via `legacyQrCodeId`/auditoria).
+> **Sem migração de dados** — `Pets/*/vacinas` está vazio no Firestore. Só API + troca de repositório no app.
+
 - [ ] `GET/POST/PATCH/DELETE /api/v1/pets/{petId}/vaccines`.
 - [ ] `ApiVacinaRepository` + flag `useApiForVacinas`. Alerta de próxima dose: manter regra no app (ou expor `alertStatus` no DTO).
 - [ ] Testar; comparar; corrigir.
@@ -114,9 +125,10 @@
 
 ---
 
-## FASE 7 — Migração + feature **Consultas**
+## FASE 7 — feature **Consultas**
 
-- [ ] Script migra `consultas` → `appointments` (combina `data`+`horario` em `scheduledAt`; mapeia 3 status).
+> **Sem migração de dados** — `Pets/*/consultas` está vazio. Só API + troca de repositório.
+
 - [ ] `GET/POST/PATCH /api/v1/pets/{petId}/appointments` (cancelar/realizar = `PATCH status`).
 - [ ] `ApiConsultaRepository` + flag. Enum do app pode continuar com 3 estados; DTO aceita o enum de 7 mas migração só usa 3.
 - [ ] Testar; comparar; corrigir.
@@ -125,9 +137,10 @@
 
 ---
 
-## FASE 8 — Migração + feature **Histórico Médico**
+## FASE 8 — feature **Histórico Médico**
 
-- [ ] Script migra `historicoMedico` → `medical_records` (guarda `legacyId`, seta `origin="TUTOR"`, mantém URLs de anexo do Cloudinary).
+> **Sem migração de dados** — `Pets/*/historicoMedico` está vazio. Só API + troca de repositório.
+
 - [ ] `GET/POST/PATCH/DELETE /api/v1/pets/{petId}/medical-records`.
 - [ ] Upload de anexo: **por enquanto continua unsigned direto do app pro Cloudinary**; a API só guarda a URL. (Upload assinado = FASE 10.)
 - [ ] `ApiHistoricoMedicoRepository` + flag. `novoId` do client deixa de ser necessário (id vem da API na criação; anexos podem subir e a URL ser enviada no POST).

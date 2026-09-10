@@ -3,6 +3,11 @@
 > Etapa obrigatória 01 do plano de migração (Flutter + Firestore → Flutter + Spring Boot + MongoDB).
 > Snapshot em 2026-09-10, branch `feature/backend-spring-mongodb-migration`, a partir do commit `8ac8a53`.
 > **Nenhum código de app ou de banco foi alterado para produzir este documento.**
+>
+> ⚠️ **Atualizado após o export real do Firestore** ([`../database/firestore-data-report.md`](../database/firestore-data-report.md)):
+> o Firestore de produção tem só 3 coleções raiz (`Usuarios` 18, `Pets` 24, `Localizacoes` 95) e
+> **nenhuma subcoleção**. As features abaixo estão implementadas no código Feature-First atual mas
+> a maioria **nunca foi exercitada em produção** — os dados reais são de uma versão anterior do app.
 
 ---
 

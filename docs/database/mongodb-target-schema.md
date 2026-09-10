@@ -144,20 +144,28 @@ Origem: subcoleção `Pets/{petId}/historicoMedico`.
 
 ## `locations`
 
-Origem: subcoleção `Pets/{petId}/localizacoes`. (Coleção raiz `Localizacoes` **não** entra sem decisão do usuário — ambiguidade D.)
+Origem: **coleção raiz `Localizacoes`** (95 docs reais com GPS — decisão D revista, migrar).
+A subcoleção `Pets/{petId}/localizacoes` do app novo está vazia; quando passar a
+gravar, escreve nesta mesma collection.
 
 | Campo | Tipo | Obrig. | Notas |
 |---|---|---|---|
 | `_id` | ObjectId | sim | |
-| `petId` | ObjectId | sim | → `pets._id` |
-| `reportedAt` | Date | sim | ← `data` |
-| `description` | string | sim | ← `descricao` |
-| `reporterContact` | string | não | ← `contatoReportante` |
-| `source` | string enum | sim | `TUTOR` / `PUBLIC_QR`; migração seta `TUTOR` |
-| `latitude` / `longitude` | number | não | **novos**; nulos na migração (dados atuais são texto livre) |
+| `petId` | ObjectId \| null | não | → `pets._id`; **null** para os 30 registros cujo pet foi apagado |
+| `legacyPetId` | string | não | `Localizacoes.petId` cru (preserva o vínculo mesmo órfão) |
+| `legacyPetName` | string | não | ← `nomePet` (denormalizado no legado) |
+| `legacyTutorName` | string | não | ← `nomeTutor` |
+| `reportedAt` | Date | sim | ← `timestamp` (já ISO) / futuro: `data` |
+| `latitude` | number | não | ← `latitude` (presente em 100% do legado) |
+| `longitude` | number | não | ← `longitude` |
+| `description` | string | não | vazio no legado; texto livre no app novo (`descricao`) |
+| `reporterContact` | string | não | ← `telefone` (legado) / `contatoReportante` (app novo) |
+| `source` | string enum | sim | `TUTOR` / `PUBLIC_QR` / `LEGACY`; migração seta `LEGACY` |
+| `legacyImport` | bool | não | `true` nos migrados |
+| `migrationWarnings` | array\<string\> | não | ex.: `["orphan-pet","foreign-coordinate","duplicate-coordinate"]` |
 | `createdAt` / `updatedAt` | Date | sim | |
 
-Índices: `{ petId: 1, reportedAt: -1 }`.
+Índices: `{ petId: 1, reportedAt: -1 }` · `{ legacyPetId: 1 }`.
 
 ---
 
