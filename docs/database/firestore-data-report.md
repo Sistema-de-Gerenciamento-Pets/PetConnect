@@ -106,31 +106,67 @@ Dos 20 docs com o campo: `null` em 17, `""` em 1, **igual a `userId` em 2, e nun
 
 Esta coleção é o **único registro histórico de uso da funcionalidade de pet perdido**. Tem GPS real — que o modelo `Localizacao` do app atual (texto livre, sem lat/long) nem captura.
 
----
-
-## Firebase Storage — imagens legadas
-
-URLs `https://firebasestorage.googleapis.com/v0/b/pet-connect-c53f1.appspot.com/...` aparecem em:
-
-- **15 fotos de usuário** (campo `foto` ou `imagemUrl`)
-- **13 fotos de pet** (campo `imagemUrl`)
-
-O Storage passou a exigir plano Blaze. **Ação necessária do usuário:** abrir 1 ou 2 dessas URLs no navegador e dizer se a imagem carrega.
-
-- Se **carregam** → o script de migração baixa cada uma e re-envia ao Cloudinary, gravando a nova URL.
-- Se **dão erro/404** → essas imagens já se perderam; a migração grava `photoUrl: null` + aviso, e o usuário re-sobe manualmente as que quiser.
+**Propósito confirmado pelo usuário:** guardava a **última localização em que o QR Code do pet foi escaneado**, para exibir no mapa. Ou seja, cada registro = um scan público do QR. Na migração → `locations` com `source: "PUBLIC_QR"` + `legacyImport: true`. Encaixa direto no RF17–RF19 (página pública do QR grava um `location` a cada scan).
 
 ---
 
-## Contas / registros candidatos a descarte (NÃO serão apagados sem sua ordem)
+## Firebase Storage — imagens legadas: **PERDIDAS** ✗
 
-| Origem | Itens |
-|---|---|
-| Usuarios de teste | `t`, `tes`, `pizza`/`testepodeapagar@g.com`, `gays`, `gayzao`, `rgsdgsdf`, `test` (~7) |
-| Pets órfãos/teste | `teste2` (`SYOrB00…`), `Branca` (`rkgJ9H…`); + pets `guff`/`gay`/`ghhfhh`/`jao` de contas de teste |
-| Localizacoes de teste | 30 do pet apagado `9CUlOu8…`, 1 na Irlanda, 13 duplicadas |
+URLs `https://firebasestorage.googleapis.com/v0/b/pet-connect-c53f1.appspot.com/...`:
+**15 fotos de usuário** + **13 fotos de pet**.
 
-**Recomendação:** migrar **tudo**, marcando cada doc importado com `legacyImport: true` e uma lista `migrationWarnings`. Nada é apagado. Depois da migração validada, você decide o que remover pelo app/console. Rollback trivial.
+Verificado pelo usuário (2026-09-10) — a URL retorna:
+
+```json
+{ "error": { "code": 402,
+  "message": "The billing account for the owning project is disabled in state closed" } }
+```
+
+**O bucket do Storage está desativado. Essas ~28 imagens não são recuperáveis.**
+
+- Migração: qualquer `photoUrl`/`foto`/`imagemUrl` que seja **só** uma URL `firebasestorage…` → `photoUrl: null` + `migrationWarnings: ["storage-image-lost"]`.
+- Sobrevivem apenas as URLs **Cloudinary**: 2 usuários (`Mayara`, `Aleksander`) e 3 pets.
+- Pós-migração, os usuários re-enviam as fotos que quiserem pelo app (upload já é Cloudinary).
+
+---
+
+## Filtro de dados de teste — **decidido: filtrar na importação**
+
+O usuário confirmou que o lixo abaixo é "zuera do pessoal testando" e **não deve ser migrado**.
+O script exclui estes registros (e registra a lista no relatório de migração para conferência).
+
+### Usuarios excluídos (7) — por docId
+
+| docId | nome | e-mail | motivo |
+|---|---|---|---|
+| `8cwyWeYyklSDkDW8dGt7Y59sYlU2` | t | tq@g.com | nome 1 letra, dob `1/1/1` |
+| `LVyo69hQEgWYuVX6cPuvOTqMcK82` | tes | tees@g.com | dob `1/1/1` |
+| `T1yKCSbsj4btGLdvbZ1bQjQAc5H2` | pizza | testepodeapagar@g.com | e-mail diz "pode apagar" |
+| `TtHZWAgUOoMn4x2H3BrI5ldRol93` | gays | testegays@g.com | — |
+| `VK4h7q3AwdWkzVHGFMVTILiAfHq1` | gayzao | gayzao@g.com | — |
+| `jKClEhIJd3SM0Pf3G8imIVhYaNE2` | rgsdgsdf | sdfgsd@g.com | dob `13/32/321` |
+| `xVQpsGte79VmgAAUdHJ6JqLSD3T2` | test | test@g.com | — |
+
+### Pets excluídos
+
+- **Órfãos** (dono não existe em `Usuarios`): `SYOrB00MF8zdpDgap9kL` ("teste2"), `rkgJ9HJEVTRTZ6jG7WRH` ("Branca").
+- **De usuário excluído:** `98fXt7cM2kPnbEz9R95B` ("gay", dono `T1yKCS…`).
+
+### Localizacoes excluídas
+
+- 30 registros do pet apagado `9CUlOu8nNKJa7OgHTzB2` (spam de teste do próprio Aleksander).
+- Registros cujo `petId` aponta para pet excluído acima.
+- **Sobram ~65** ligadas a pet existente e válido → essas migram.
+
+### ⚠️ Borderline — mantidos, veto o usuário se quiser remover
+
+| docId | nome | por que é dúbio |
+|---|---|---|
+| `VW9SSkVidvWvjMQeTHy1XTZMaMz1` | **Marcola** (usuário) | schema antigo sem e-mail/dob; nome é gíria; pets "Calabreso", "ghhfhh", "jao", "epaminondas" parecem piada. Mas tem foto e telefone. **Não excluí** porque a coleção `Localizacoes` tem avistamentos do "Calabreso" (`TkMCxy…`, 8 registros) — pode ser uso real |
+| `4nMLz8EC9aeF0rEMJWykDvloOq92` | registro | e-mail `registro@gmail.vom` (typo), nome "registro" — provável teste, mas dob e telefone plausíveis |
+| Pets de Marcola | ghhfhh / jao / epaminondas | lixo (`especie:"guff"`, `peso:"byi"`), mas de um usuário que **não** foi excluído |
+
+Se o usuário disser "pode tirar Marcola e o registro também", eles entram na lista de exclusão e os pets/avistamentos ligados vão junto.
 
 ---
 
@@ -157,10 +193,10 @@ O Storage passou a exigir plano Blaze. **Ação necessária do usuário:** abrir
 
 ---
 
-## Decisões que precisam de você
+## Decisões — todas resolvidas (2026-09-10)
 
-1. **`Localizacoes` (item D, revisto):** migrar as 95 para `locations`? Recomendo **sim**, vinculando as 65 ao pet e mantendo as 30 órfãs com referência textual. Confirmar.
-2. **Imagens do Storage:** abrir uma URL `firebasestorage…` e dizer se carrega.
-3. **App novo já foi publicado?** O APK/loja que os usuários usam hoje é este código Feature-First ou a versão antiga? (Os dados dizem que é a antiga.)
-4. **Dados de teste:** ok migrar tudo com `legacyImport`/`migrationWarnings` e você limpa depois? Ou já filtro as ~7 contas de teste e 2 pets órfãos na importação?
-5. **Firestore Rules:** colar o conteúdo atual (Console → Firestore → aba Regras).
+1. ✅ **`Localizacoes`:** migrar as ~65 válidas para `locations` (`source: PUBLIC_QR`). Propósito: última localização de scan do QR, exibida no mapa.
+2. ✅ **Imagens do Storage:** bucket desativado (billing `402 closed`). ~28 imagens **perdidas** → `photoUrl: null` + aviso. Só sobrevivem as do Cloudinary.
+3. ✅ **App novo:** os 18 usuários são da versão antiga, mas o app novo lê/escreve o mesmo Firestore (usuário logou na conta "Aleksander" pelo app novo). A migração processa o mesmo export.
+4. ✅ **Dados de teste:** **filtrar na importação** — lista de exclusão acima (7 usuários + 3 pets + ~30 avistamentos). Marcola e "registro" ficam como borderline.
+5. ✅ **Firestore Rules:** coladas e analisadas em [`../security/firestore-rules-deployed.md`](../security/firestore-rules-deployed.md). Resumo: **banco inteiro legível sem login** (catch-all `allow read`), `Localizacoes` com **escrita pública**. Endurecimento faseado (não quebrar o app antigo agora).

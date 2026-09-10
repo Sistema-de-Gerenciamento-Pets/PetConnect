@@ -160,7 +160,7 @@ gravar, escreve nesta mesma collection.
 | `longitude` | number | não | ← `longitude` |
 | `description` | string | não | vazio no legado; texto livre no app novo (`descricao`) |
 | `reporterContact` | string | não | ← `telefone` (legado) / `contatoReportante` (app novo) |
-| `source` | string enum | sim | `TUTOR` / `PUBLIC_QR` / `LEGACY`; migração seta `LEGACY` |
+| `source` | string enum | sim | `TUTOR` / `PUBLIC_QR`; migração seta `PUBLIC_QR` (cada registro legado = 1 scan do QR) |
 | `legacyImport` | bool | não | `true` nos migrados |
 | `migrationWarnings` | array\<string\> | não | ex.: `["orphan-pet","foreign-coordinate","duplicate-coordinate"]` |
 | `createdAt` / `updatedAt` | Date | sim | |

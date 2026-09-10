@@ -29,10 +29,11 @@
 |---|---|---|
 | `usuarioID` (B) | preservar como `legacyUsuarioId` em `users` | custo zero, evita perda de dado; descarta-se depois se o relatório confirmar que está sempre ausente/sem uso |
 | `Pets.dono` (C) | **descartar** | o export confirma: `dono` é null/`""`/`==userId` em 100% dos casos, nunca aponta outro usuário |
-| `Localizacoes` raiz (D) | ~~não migrar~~ → **MIGRAR** para `locations` | o export revelou 95 docs reais com GPS (histórico da feature "pet perdido"). 65 ligam a pet existente; 30 órfãs entram com `petId: null` + refs textuais. Ruído de teste é marcado, não apagado |
+| `Localizacoes` raiz (D) | ~~não migrar~~ → **MIGRAR** para `locations` (`source: PUBLIC_QR`) | 95 docs reais com GPS = última localização de scan do QR (exibida no mapa). Migram ~65 ligadas a pet válido; órfãs/teste são filtradas (ver abaixo) |
 | Subcoleções de `Pets` | **nada a migrar** | `vacinas`/`historicoMedico`/`consultas`/`localizacoes` têm **0 documentos** no Firestore — nascem vazias no Mongo. As FASES 6–8 passam a ser só "expor a API + trocar o repositório no app" |
-| Imagens no Firebase Storage (novo) | script tenta baixar e re-subir ao Cloudinary; falha → `photoUrl: null` + aviso | ~28 URLs `firebasestorage…`; Storage exige Blaze. **Pendente: usuário confirmar se as URLs ainda abrem** |
-| Dados de teste (novo) | migrar tudo com `legacyImport: true` + `migrationWarnings[]`; **não apagar** | ~7 contas de teste, 2 pets órfãos, ~44 `Localizacoes` de teste. Usuário limpa depois pelo app/console. Rollback trivial |
+| Imagens no Firebase Storage | `photoUrl: null` + `migrationWarnings:["storage-image-lost"]` | ✅ confirmado: bucket **desativado** (billing `402 closed`). ~28 imagens perdidas, irrecuperáveis. Só sobrevivem URLs Cloudinary (2 usuários, 3 pets). Usuários re-enviam pelo app depois |
+| Dados de teste | **filtrar na importação** (não migrar) | ✅ confirmado pelo usuário. Exclusão: 7 usuários de teste (por docId), 3 pets (2 órfãos + 1 de usuário excluído), ~30 `Localizacoes` do pet apagado `9CUlOu8…`. Lista completa em [`firestore-data-report.md`](../database/firestore-data-report.md). "Marcola" e "registro" ficam (borderline) até veto do usuário |
+| Firestore Rules (E) | conhecidas e versionar como `firestore.rules` | ✅ coladas. Banco inteiro legível sem login; `Localizacoes` com escrita pública. Endurecimento faseado — ver FASE 11 e [`firestore-rules-deployed.md`](../security/firestore-rules-deployed.md) |
 | Backend (F) | **repositório separado** `PetConnect-API` | não mistura toolchain Dart e Java; CI independente; Flutter não se move |
 | Hospedagem (G) | **MongoDB Atlas M0** (grátis, 512 MB, sem cartão) para dev+staging; backend em host free (Render / Railway / Fly.io / Koyeb) | sem faturamento, igual à restrição do Firebase |
 | Página pública QR (H) | fica na **FASE 9**, depois da migração de dados das entidades centrais | não é pré-requisito de nenhuma fase anterior |
@@ -75,9 +76,10 @@
 - [ ] Script de migração (Java/Spring `CommandLineRunner` ou standalone) lê `firestore_backup.json` e grava `users`, `pets`, `locations` no Mongo.
 - [ ] **users:** normaliza `foto`/`imagemUrl`/`photoURL`, `usuarioID`/`uid`→`legacyUsuarioId`, `genero` Homem/Mulher/Outro→enum, datas inválidas→`null`+aviso, `roles=["TUTOR"]`.
 - [ ] **pets:** resolve `tutorId` via `userId`/`userID`; `peso` heterogêneo→`weightKg`; `especie`/`porte` lixo→`OTHER`/`null`+aviso; `dataNascimento` (dd/MM/yyyy | ISO | inválida); gera `publicId`; `status="ACTIVE"`; descarta `dono`/`id`/`datadenascimento`.
-- [ ] **locations:** `timestamp`→`reportedAt`; liga `petId` ao `pets._id` quando existe, senão `petId: null` + `legacyPetId`/`legacyPetName`/`legacyTutorName`; `source="LEGACY"`.
-- [ ] **Imagens do Storage:** para cada URL `firebasestorage…`, baixar e re-subir ao Cloudinary; falha/404 → `photoUrl: null` + aviso. (Depende da resposta do usuário sobre as URLs.)
-- [ ] Todo doc importado recebe `legacyImport: true` + `migrationWarnings: [...]`. Nada é filtrado/apagado.
+- [ ] **locations:** só as ~65 ligadas a pet válido; `timestamp`→`reportedAt`; `latitude`/`longitude` direto; `telefone`→`reporterContact`; `nomePet`/`nomeTutor`→`legacyPetName`/`legacyTutorName`; `source="PUBLIC_QR"`.
+- [ ] **Imagens do Storage:** toda URL `firebasestorage…` → `photoUrl: null` + `migrationWarnings:["storage-image-lost"]` (bucket desativado, irrecuperável). URLs Cloudinary passam direto.
+- [ ] **Filtro de teste:** excluir da importação os 7 usuários + 3 pets + ~30 locations da lista em [`firestore-data-report.md`](../database/firestore-data-report.md). Registrar a lista excluída no relatório.
+- [ ] Todo doc importado recebe `legacyImport: true` + `migrationWarnings: [...]`.
 - [ ] Grava `migration_audit` por documento (com `warnings` e snapshot cru).
 - [ ] Idempotente: chave natural = `firebaseUid` (users) / `legacyFirestoreId` (pets, locations).
 - [ ] Relatório: migrados / com warning / falhos + lista dos candidatos a limpeza.
@@ -175,12 +177,17 @@
 
 ## FASE 11 — Endurecer segurança e Firestore Rules
 
-- [ ] Revisar/deployar Firestore Rules restritivas (a essa altura o Firestore só tem Auth + dados legados read-only): idealmente `allow read, write: if false` para coleções já migradas, mantendo só o necessário.
+Regras deployadas hoje e análise: [`../security/firestore-rules-deployed.md`](../security/firestore-rules-deployed.md).
+Situação atual: **banco inteiro legível sem login** (catch-all `allow read`), `Localizacoes` com **escrita pública**.
+
+- [ ] **Cedo (após FASE 3, baixo risco):** criar `firestore.rules` no repo + referenciar em `firebase.json`; trocar catch-all `allow read;` → `allow read: if request.auth != null;` (corta leitura anônima de PII). Testar o app antigo.
+- [ ] **Assim que a nova gravação de avistamento estiver na API:** `Localizacoes` → `write: if false`.
+- [ ] **FASE 11 propriamente (após FASES 3–5 validadas):** `allow read, write: if false` nas coleções já migradas; manter só o mínimo para o app antigo até a FASE 13.
 - [ ] Rate limiting, CORS, headers de segurança no backend.
 - [ ] Revisão: nenhum segredo no repo (app ou backend); `git log` limpo de credenciais novas.
 - [ ] App Check / reforço de auth se aplicável.
 
-**Rollback:** reverter regras para o estado da FASE 0 (backup das rules).
+**Rollback:** reverter `firestore.rules` para o conteúdo registrado em `firestore-rules-deployed.md`.
 
 ---
 
@@ -230,11 +237,13 @@ Todas default `false` até a respectiva fase ser validada. Remoção das flags: 
 
 | Ref | Assunto | Situação |
 |---|---|---|
-| A | Dados reais do Firestore | ✅ resolvido via `tools/firestore-backup/` (sem Blaze). Pendente: usuário rodar e colar `report.md` |
+| A | Dados reais do Firestore | ✅ export real recebido (`firestore_backup.json`) e analisado em [`firestore-data-report.md`](../database/firestore-data-report.md) |
 | B | `usuarioID` | ✅ decidido: preservar como `legacyUsuarioId` |
-| C | `Pets.dono` | ✅ decidido: preservar como `legacyDono` só se `!= userId` |
-| D | `Localizacoes` raiz | ✅ decidido: não migrar (fica no backup) |
-| E | Firestore Rules deployadas | ⏳ usuário cola as regras (bloqueia só a FASE 11) |
+| C | `Pets.dono` | ✅ decidido: **descartar** (nunca aponta outro usuário) |
+| D | `Localizacoes` raiz | ✅ decidido: **migrar** ~65 válidas (`source: PUBLIC_QR`); teste/órfãs filtradas |
+| E | Firestore Rules deployadas | ✅ conhecidas e analisadas; endurecimento faseado (FASE 11) |
+| — | Imagens Firebase Storage | ✅ perdidas (bucket desativado) → `photoUrl: null` |
+| — | Dados de teste | ✅ filtrados na importação (lista fechada; Marcola/"registro" borderline) |
 | F | Backend: repo vs subpasta | ✅ decidido: repositório separado `PetConnect-API` |
 | G | Hospedagem MongoDB + backend | ✅ decidido: Atlas M0 grátis + host free (Render/Railway/Fly/Koyeb) |
 | H | Página pública do QR (RF17–19) | ✅ decidido: permanece na FASE 9 |
