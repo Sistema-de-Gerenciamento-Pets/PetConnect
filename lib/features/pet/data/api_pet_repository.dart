@@ -90,7 +90,7 @@ class ApiPetRepository implements PetRepository {
       if (_generoParaApi[p.genero] != null) 'gender': _generoParaApi[p.genero],
       if (_porteParaApi[p.porte] != null) 'size': _porteParaApi[p.porte],
       'weightKg': _pesoParaKg(p.peso),
-      if (p.dataNascimento.isNotEmpty) 'birthDate': _brParaIso(p.dataNascimento),
+      if (p.dataNascimento.isNotEmpty) 'birthDate': brToIso(p.dataNascimento),
       'vaccinatedFlag': p.vacinado,
       'publicContactPhone': p.telefone,
       'photoUrl': p.foto,
@@ -109,7 +109,7 @@ class ApiPetRepository implements PetRepository {
       genero: _generoDaApi[m['gender']] ?? '',
       porte: _porteDaApi[m['size']] ?? '',
       peso: _kgParaPeso(peso is num ? peso.toDouble() : null),
-      dataNascimento: _isoParaBr(m['birthDate'] as String?),
+      dataNascimento: isoToBr(m['birthDate'] as String?),
       vacinado: (m['vaccinatedFlag'] ?? false) as bool,
       telefone: m['publicContactPhone'] as String?,
       foto: m['photoUrl'] as String?,
@@ -129,19 +129,5 @@ class ApiPetRepository implements PetRepository {
     if (kg == null) return '';
     final s = kg == kg.roundToDouble() ? kg.toInt().toString() : kg.toString();
     return '${s}kg';
-  }
-
-  static String _brParaIso(String br) {
-    final d = parseBrDate(br);
-    if (d == null) return br;
-    return '${d.year.toString().padLeft(4, '0')}-'
-        '${d.month.toString().padLeft(2, '0')}-'
-        '${d.day.toString().padLeft(2, '0')}';
-  }
-
-  static String _isoParaBr(String? iso) {
-    if (iso == null || iso.isEmpty) return '';
-    final d = DateTime.tryParse(iso);
-    return d == null ? '' : formatBrDate(d);
   }
 }

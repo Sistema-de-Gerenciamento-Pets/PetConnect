@@ -92,6 +92,8 @@ class _VacinaFormScreenState extends ConsumerState<VacinaFormScreen> {
           ),
         );
       }
+      // A lista via API é uma emissão única — força o recarregamento.
+      ref.invalidate(vacinasProvider(widget.petId));
       if (mounted) context.pop();
     } catch (_) {
       if (mounted) {

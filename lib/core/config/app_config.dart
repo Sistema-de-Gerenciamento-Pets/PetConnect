@@ -23,6 +23,9 @@ class AppConfig {
   /// em vez do Firestore. Login/cadastro/reset continuam no Firebase Auth.
   static const bool useApiForUsuario = bool.fromEnvironment('USE_API_USUARIO');
 
-  /// FASE 5 — pets via API. (ainda não implementado)
+  /// FASE 5 — pets via API.
   static const bool useApiForPets = bool.fromEnvironment('USE_API_PETS');
+
+  /// FASE 6 — carteira de vacina via API.
+  static const bool useApiForVacinas = bool.fromEnvironment('USE_API_VACINAS');
 }

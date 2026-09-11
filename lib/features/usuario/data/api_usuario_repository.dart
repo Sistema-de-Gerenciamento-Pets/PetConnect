@@ -66,7 +66,7 @@ class ApiUsuarioRepository implements UsuarioRepository {
     await _api.patch('/me', {
       'firstName': nome,
       if (telefone.isNotEmpty) 'phone': telefone,
-      if (dataNascimento.isNotEmpty) 'birthDate': _brParaIso(dataNascimento),
+      if (dataNascimento.isNotEmpty) 'birthDate': brToIso(dataNascimento),
     });
   }
 
@@ -93,7 +93,7 @@ class ApiUsuarioRepository implements UsuarioRepository {
       'firstName': nome,
       'lastName': sobrenome,
       'phone': telefone,
-      if (dataNascimento.isNotEmpty) 'birthDate': _brParaIso(dataNascimento),
+      if (dataNascimento.isNotEmpty) 'birthDate': brToIso(dataNascimento),
       if (_generoParaApi[genero] != null) 'gender': _generoParaApi[genero],
       if (foto != null) 'photoUrl': foto,
     });
@@ -126,25 +126,9 @@ class ApiUsuarioRepository implements UsuarioRepository {
       sobrenome: (m['lastName'] ?? '') as String,
       email: (m['email'] ?? '') as String,
       telefone: (m['phone'] ?? '') as String,
-      dataNascimento: _isoParaBr(m['birthDate'] as String?),
+      dataNascimento: isoToBr(m['birthDate'] as String?),
       genero: _generoDaApi[m['gender']] ?? '',
       foto: m['photoUrl'] as String?,
     );
-  }
-
-  /// `dd/MM/yyyy` → `yyyy-MM-dd` (ISO 8601). Assume entrada válida.
-  static String _brParaIso(String br) {
-    final d = parseBrDate(br);
-    if (d == null) return br;
-    return '${d.year.toString().padLeft(4, '0')}-'
-        '${d.month.toString().padLeft(2, '0')}-'
-        '${d.day.toString().padLeft(2, '0')}';
-  }
-
-  /// `yyyy-MM-dd` → `dd/MM/yyyy`. Vazio/nulo → `''`.
-  static String _isoParaBr(String? iso) {
-    if (iso == null || iso.isEmpty) return '';
-    final d = DateTime.tryParse(iso);
-    return d == null ? '' : formatBrDate(d);
   }
 }

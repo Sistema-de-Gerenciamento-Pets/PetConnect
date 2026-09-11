@@ -15,6 +15,23 @@ DateTime? parseBrDate(String value) {
 
 String formatBrDate(DateTime date) => _formatter.format(date);
 
+/// `dd/MM/yyyy` → `yyyy-MM-dd` (ISO 8601, usado nos payloads da API).
+/// Devolve a própria string se não for uma data válida.
+String brToIso(String br) {
+  final d = parseBrDate(br);
+  if (d == null) return br;
+  return '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
+}
+
+/// `yyyy-MM-dd` (ou ISO completo) → `dd/MM/yyyy`. Vazio/nulo → `''`.
+String isoToBr(String? iso) {
+  if (iso == null || iso.isEmpty) return '';
+  final d = DateTime.tryParse(iso);
+  return d == null ? '' : formatBrDate(d);
+}
+
 /// Idade em anos completos a partir de uma data de nascimento `dd/MM/yyyy`,
 /// ou `null` se a data estiver vazia/inválida.
 int? idadeEmAnos(String dataNascimento, {DateTime? agora}) {

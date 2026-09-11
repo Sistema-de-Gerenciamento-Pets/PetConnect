@@ -35,6 +35,7 @@ class VacinaListScreen extends ConsumerWidget {
     if (confirmou != true) return;
 
     await ref.read(vacinaRepositoryProvider).deleteVacina(petId, vacina.id);
+    ref.invalidate(vacinasProvider(petId));
   }
 
   @override
@@ -62,31 +63,47 @@ class VacinaListScreen extends ConsumerWidget {
             child: Text('Não foi possível carregar as vacinas.', style: TextStyle(color: AppColors.error)),
           ),
           data: (vacinas) {
+            Future<void> atualizar() async {
+              ref.invalidate(vacinasProvider(petId));
+              await ref.read(vacinasProvider(petId).future);
+            }
+
             if (vacinas.isEmpty) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Text(
-                    'Nenhuma vacina registrada ainda.\nToque em "+" para adicionar.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textMuted),
-                  ),
+              return RefreshIndicator(
+                onRefresh: atualizar,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: const [
+                    SizedBox(height: 120),
+                    Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Text(
+                        'Nenhuma vacina registrada ainda.\nToque em "+" para adicionar.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.textMuted),
+                      ),
+                    ),
+                  ],
                 ),
               );
             }
 
-            return ListView.separated(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 96),
-              itemCount: vacinas.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final vacina = vacinas[index];
-                return VacinaTile(
-                  vacina: vacina,
-                  onTap: () => context.push('/pet/$petId/vacinas/${vacina.id}/editar', extra: vacina),
-                  onDelete: () => _confirmarExclusao(context, ref, vacina),
-                );
-              },
+            return RefreshIndicator(
+              onRefresh: atualizar,
+              child: ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 96),
+                itemCount: vacinas.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final vacina = vacinas[index];
+                  return VacinaTile(
+                    vacina: vacina,
+                    onTap: () => context.push('/pet/$petId/vacinas/${vacina.id}/editar', extra: vacina),
+                    onDelete: () => _confirmarExclusao(context, ref, vacina),
+                  );
+                },
+              ),
             );
           },
         ),
