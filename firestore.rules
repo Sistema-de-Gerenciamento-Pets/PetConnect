@@ -1,22 +1,16 @@
 rules_version = '2';
 
-// Regras REALMENTE deployadas em produção hoje (coladas do console pelo
-// usuário em 2026-09-10, ver docs/security/firestore-rules-deployed.md para
-// a análise completa). Versionadas aqui só para ficarem rastreadas — este
-// arquivo ainda NÃO está referenciado por um deploy automático; qualquer
-// mudança precisa ser aplicada manualmente (Console ou `firebase deploy
-// --only firestore:rules`) e testada contra o app antigo antes de seguir
-// pro próximo passo do endurecimento (FASE 11 da migração).
+// FASE 11, passo 1 — endurecimento de baixo risco (2026-09-11).
+// Estado anterior (o que estava deployado antes desta mudança) fica registrado
+// em docs/security/firestore-rules-deployed.md e no histórico do git deste
+// arquivo. Mudança: fecha leitura/escrita ANÔNIMA (sem login) em tudo — nada
+// que exigia só `request.auth != null` deixa de funcionar; só o acesso sem
+// login nenhum é que passa a ser negado.
 //
-// Achados principais (⚠️ = risco):
-//   - catch-all `/{document=**}` com `allow read;` incondicional: ⚠️ o BANCO
-//     INTEIRO é legível sem login, inclusive PII de `Usuarios`.
-//   - `Pets`: leitura pública (mesmo sem o catch-all, já seria assim).
-//   - `Localizacoes`: ⚠️ leitura E ESCRITA públicas — qualquer um cria, edita
-//     ou apaga qualquer registro.
-//   - `Usuarios` update/delete comparam com `resource.data.uid`, campo que só
-//     existe em 1 dos 18 documentos reais — na prática, update/delete falham
-//     pra quase todo mundo (fail-closed, não é um risco, é uma inconsistência).
+// Confirmado com o usuário (2026-09-11): não há mais nenhum fluxo público
+// real (página/Cloud Function) escrevendo em `Localizacoes` — os 95 registros
+// eram só histórico, já migrados para o MongoDB. Por isso já é seguro fechar
+// a escrita pública, não só a leitura.
 service cloud.firestore {
   match /databases/{database}/documents {
     match /Usuarios/{userId} {
@@ -27,18 +21,22 @@ service cloud.firestore {
     }
 
     match /Pets/{petId} {
-      allow read: if true;
+      // Antes: allow read: if true;  (qualquer um, sem login, lia todos os pets)
+      allow read: if request.auth != null;
       allow create: if request.auth != null;
       allow update: if request.auth != null && request.auth.uid == resource.data.userId;
       allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
 
     match /Localizacoes/{docId} {
-      allow read, write: if true;
+      // Antes: allow read, write: if true;  (leitura E escrita públicas)
+      allow read, write: if request.auth != null;
     }
 
     match /{document=**} {
-      allow read;
+      // Antes: allow read;  (catch-all liberava leitura de qualquer coisa,
+      // mesmo sem login, para qualquer coleção sem regra própria)
+      allow read: if request.auth != null;
       allow write: if request.auth != null;
     }
   }
