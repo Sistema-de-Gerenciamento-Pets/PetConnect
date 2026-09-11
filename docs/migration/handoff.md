@@ -1,7 +1,7 @@
 # Handoff — estado da migração e próximos passos
 
 > Documento vivo para retomar o trabalho (por mim numa próxima sessão ou por outra pessoa).
-> Atualizado em 2026-09-11, no meio da FASE 11 (passo 1 deployado e verificado em produção).
+> Atualizado em 2026-09-11, FASE 11 fechada (rate limiting + Firestore Rules passos 1 e 2, todos deployados e verificados em produção).
 
 ---
 
@@ -20,7 +20,7 @@
 | 8 — Feature **Histórico Médico** | ✅ verificada e2e (flag `USE_API_HISTORICO`) |
 | 9 — QR + página pública | ✅ **parcial** — API pública ok (flag `USE_API_LOCALIZACAO` no lado autenticado); página web + URL real do QR pendentes de hospedagem (usuário: "só local por enquanto") |
 | 10 — Upload assinado (Cloudinary) | ✅ **código pronto e testado** (flag `USE_API_UPLOAD`); round-trip real pendente da API Secret do usuário |
-| **11 — Endurecer Firestore Rules** | 🚧 **em andamento** — passo 1 deployado e verificado (ver seção 5) |
+| **11 — Endurecer Firestore Rules + rate limiting** | ✅ **fechada** — rules passos 1 e 2 deployados/verificados + rate limiting nos endpoints públicos (ver seção 5). Endurecimento final de `Usuarios`/`Pets` deliberadamente adiado (gated em uso real) |
 | 12–13 | pendentes (ver seção 6) |
 
 Todas as flags default **off** — sem `--dart-define`, o app roda 100% Firebase, como sempre.
@@ -68,7 +68,7 @@ flutter run \
 
 **Testes**
 ```bash
-# backend (JDK 21 + Maven, Mongo embarcado): 68 testes
+# backend (JDK 21 + Maven, Mongo embarcado): 72 testes
 cd "…/PetConnect-API" && mvn -q -B test
 # app: flutter analyze + 25 testes
 cd "…/PetConnect"     && flutter analyze && flutter test test/core/ test/features/pet/
@@ -99,7 +99,8 @@ temporariamente e apagar depois).
 - **Firebase Storage morto** (billing encerrado): 18 imagens legadas viraram `photoUrl: null` + aviso `storage-image-lost`. Só sobrevivem URLs Cloudinary (2 users, 3 pets).
 - **Credencial Firebase:** `C:\Users\Aleksander\Documents\pet-connect-c53f1-firebase-adminsdk-t8ctg-326661da99.json` (fora dos repos). Montada read-only no container via `.env` (`FIREBASE_SA_PATH`).
 - **Credencial Cloudinary (nova, FASE 10):** falta `CLOUDINARY_API_KEY`/`CLOUDINARY_API_SECRET` — pegar em https://console.cloudinary.com → Dashboard. Adicionar no `.env`/`compose.yaml` do backend (mesmo padrão da chave do Firebase — nunca no git). Sem isso, `/api/v1/uploads/**` responde 503 `UPLOAD_NOT_CONFIGURED` (verificado, não quebra o resto da API).
-- **Firestore Rules atuais** são permissivas (banco todo legível sem login, `Localizacoes` com escrita pública) — texto completo em `docs/security/firestore-rules-deployed.md`. Endurecer é a FASE 11 (seção 5).
+- **Firestore Rules**: endurecidas na FASE 11 (catch-all/`Pets`/`Localizacoes` exigem login; `Localizacoes` write travado de vez). `Usuarios`/`Pets` ainda **não** foram travados (`if false`) — o app antigo, usado pelos 18 usuários reais, ainda lê essas coleções direto do Firestore. Texto completo + histórico em `docs/security/firestore-rules-deployed.md`, seção 5 abaixo.
+- **Pegadinha de regras do Firestore (aprendida na FASE 11 passo 2):** blocos `match` se somam por OR, não por especificidade — um `if false` num bloco específico não vence um `if true`/`auth != null` mais permissivo de um catch-all que também casa o mesmo caminho. Pra excluir um caminho do catch-all, indexar `request.path[N]` (tipo `path` do Firestore não tem `.size()` — dá erro de tipo silencioso, tratado como `false`, o que bloquearia TUDO se usado sem querer no catch-all). Sempre verificar via REST direto depois de deployar, não só confiar no exit code do `firebase deploy`.
 - **Web API key** (trocar custom token → ID token em e2e): `AIzaSyARaspdC-wNqVESmfVuJqPCg9wAbomoQrc`.
 - **Feature flags** (`lib/core/config/app_config.dart`): `USE_API_USUARIO`, `USE_API_PETS`, `USE_API_VACINAS`, `USE_API_CONSULTAS`, `USE_API_HISTORICO`, `USE_API_LOCALIZACAO`, `USE_API_UPLOAD` — todas default `false`. Mais `API_BASE_URL`.
 - **`publicId` do pet** é determinístico na migração (`UUID.nameUUIDFromBytes("pet:" + legacyFirestoreId)`) — não muda entre re-execuções da migração.
@@ -123,7 +124,7 @@ temporariamente e apagar depois).
 
 ---
 
-## 5. FASE 11 — Endurecer Firestore Rules (em andamento)
+## 5. FASE 11 — Endurecer Firestore Rules + rate limiting (✅ fechada)
 
 Diferente das fases anteriores, esta mexe no **Firestore**, não no backend novo — é a fase
 onde o risco de quebrar o app antigo (que os 18 usuários reais ainda usam) é real. Por isso:
@@ -146,22 +147,66 @@ REST (anônimo vs. autenticado) em vez de só confiar que "deve ter funcionado".
   continua igual (leitura do próprio `Usuarios`, query em `Pets`).
 - Histórico completo (regra antiga vs. nova, análise) em `docs/security/firestore-rules-deployed.md`.
 
-### 5.2 O que falta (nenhuma urgência — sem uso real dependendo disso)
-1. `Localizacoes` → `write: if false` de vez (hoje só exige login; como não há mais uso real,
-   dá pra travar de vez sem pedir confirmação de novo — é uma continuação do que já foi
-   decidido, não uma decisão nova).
-2. **Só depois que as FASES 4–10 estiverem validadas em uso real** (não só e2e — alguém de
-   verdade usando o app com as flags ligadas por um tempo): `allow read, write: if false` em
-   `Usuarios`/`Pets` (as coleções que já têm equivalente 100% funcional na API).
-3. Rate limiting/CORS/headers de segurança no backend — ainda **nada** disso existe, nem nos
-   endpoints públicos da FASE 9 (que hoje aceitam qualquer volume de requisição anônima).
-4. Checklist final: nenhum segredo no repo (app ou backend) — `git log` de ambos limpo.
+### 5.2 Rate limiting nos endpoints públicos — ✅ feito e verificado (2026-09-11)
+- Backend: `RateLimiter` (componente em memória, janela deslizante) + `RateLimitProperties`
+  (`petconnect.rate-limit.{public-read,public-write}-per-minute`, default 30/10) +
+  `PublicEndpointRateLimitFilter` (`OncePerRequestFilter`, só age em `/api/v1/public/**`,
+  chave = IP + read/write, 429 `RATE_LIMITED` no envelope padrão de erro).
+- Registrado em `SecurityConfig` via `addFilterBefore`. Config de teste com limites bem
+  generosos (1000/min) pra não interferir nos testes existentes; teste dedicado
+  (`PublicEndpointRateLimitFilterTest`, 4 casos) usa `@TestPropertySource` com limites baixos
+  (3/2) pra exercitar o 429 de verdade — contexto Spring separado, não contamina o resto.
+  **72/72 testes passando** (68 de antes + 4 novos).
+- Verificado ao vivo contra o container Docker reconstruído: 33 requisições seguidas em
+  `GET /api/v1/public/pets/x` → as 30 primeiras passam (404, pet não existe, mas prova que o
+  filtro roda antes do controller), as 3 seguintes voltam `429`; mesmo padrão pro `POST
+  .../sightings` (10/min). Corpo do 429 confirmado como o `ApiError` padrão.
+- Não distribuído (limitação documentada no código) — se algum dia rodar mais de um pod/réplica
+  da API, precisa virar contador compartilhado (Redis, por ex.).
 
-### 5.3 Lição pra próxima vez que mexer em regras de produção
+### 5.3 Passo 2 — `Localizacoes` write travado de vez — ✅ feito e verificado (2026-09-11)
+- Mudança: `Localizacoes` (coleção raiz) → `allow write: if false` (leitura autenticada
+  continua liberada, é só histórico).
+- **Achado durante a verificação (não durante o code review — só apareceu testando de
+  verdade):** o primeiro deploy pareceu ter funcionado (CLI sem erro), mas um teste real via
+  REST mostrou que a escrita autenticada **ainda passava**. Causa: regras do Firestore se
+  somam por OR entre blocos `match` — o catch-all `/{document=**}` também casa
+  `Localizacoes/{docId}` e concedia `write: if request.auth != null`, que vencia por cima do
+  `if false` mais específico (Firestore não tem "mais específico vence"). Corrigido excluindo
+  `Localizacoes` do catch-all.
+- **Segundo problema, também achado testando:** a primeira tentativa de exclusão usava
+  `document.size()` (`document` = variável do wildcard `{document=**}`, tipo `path`) — `path`
+  não tem `.size()`, erro de tipo silencioso que o Firestore avalia como `false`, o que
+  **derrubaria a escrita de QUALQUER coleção**, não só `Localizacoes` (confirmado: um POST
+  autenticado numa coleção de teste não-relacionada voltou 403 inesperado). Corrigido
+  indexando `request.path[3]` (posição fixa do nome da coleção raiz: 0=databases, 1=db,
+  2=documents, 3=coleção) em vez da variável do wildcard — sem warning de tipo no `firebase
+  deploy`, testado e confirmado: `Localizacoes` write → 403; coleção não-relacionada → volta a
+  200; subcoleção real `Pets/{petId}/localizacoes` (usada pelo app antigo) → não afetada.
+- Todos os documentos de teste criados durante a verificação (2 em `Localizacoes`, 1 numa
+  coleção de scratch, 1 na subcoleção `Pets/x/localizacoes`) foram apagados via Admin SDK
+  logo em seguida.
+- **Lição geral:** deploy sem erro ≠ regra funcionando como esperado. Regras do Firestore não
+  têm precedência por especificidade — sempre testar o efeito real via REST (autenticado E
+  anônimo, no caminho que mudou E num caminho não-relacionado) antes de dar como fechado.
+
+### 5.4 O que falta (deliberadamente não feito — sem urgência)
+1. **Endurecimento final:** `allow read, write: if false` em `Usuarios`/`Pets` (as coleções
+   que já têm equivalente 100% funcional na API). Gated em uso real validado das FASES 4–10
+   (não só e2e) — os 18 usuários reais ainda rodam o app antigo com as flags `USE_API_*` off
+   por padrão, que lê essas coleções direto do Firestore. Fechar agora quebraria o app pra
+   eles. Só fazer depois de uso real validado com as flags ligadas, ou na FASE 13.
+2. App Check / reforço de auth — avaliar junto com o item 1.
+3. CORS/headers de segurança adicionais no backend — CORS básico já existe desde a FASE 2
+   (`CorsProperties`/`SecurityConfig`), isto seria endurecimento extra, não coberto ainda.
+
+### 5.5 Lição pra próxima vez que mexer em regras de produção
 Sempre: (a) confirmar com o usuário a suposição de que "nada real depende disso" antes de
 restringir algo que hoje é público — não presumir; (b) pedir confirmação explícita antes do
 `firebase deploy` em si, separada da confirmação de "seguir com a fase"; (c) verificar
-depois via requisição real (autenticada e anônima), não só "deployou sem erro".
+depois via requisição real (autenticada e anônima, no caminho que mudou **e** num caminho
+não-relacionado — para pegar efeitos colaterais no catch-all), não só "deployou sem erro";
+(d) lembrar que blocos `match` do Firestore se somam por OR, nunca por especificidade.
 
 ---
 
@@ -178,7 +223,7 @@ depois via requisição real (autenticada e anônima), não só "deployou sem er
 
 - **FASE 9:** página pública + URL real do QR — precisa de hospedagem (domínio/host).
 - **FASE 10:** `CLOUDINARY_API_KEY`/`CLOUDINARY_API_SECRET` reais — sem isso o round-trip de upload assinado não foi testado contra o Cloudinary de verdade (só o código + os 503 graciosos).
-- **FASE 11:** `Localizacoes.write` ainda exige só login (não `if false` de vez); endurecimento final (`Usuarios`/`Pets` → `if false`) espera uso real validado; rate limiting nos endpoints públicos ainda não existe.
+- **FASE 11:** fechada. Único item deliberadamente adiado: endurecimento final (`Usuarios`/`Pets` → `if false`), que espera uso real validado das flags `USE_API_*` (não só e2e) — ver seção 5.4.
 - **CI do backend:** não há GitHub Actions ainda. Sugerido: workflow `mvn -B test`.
 - **Hospedagem staging:** MongoDB Atlas M0 + host free — só quando for testar fora do localhost.
 - **Validação amostral manual** da FASE 3: 1 spot-check feito (Nymeria/Aleksander OK); conferir mais alguns.

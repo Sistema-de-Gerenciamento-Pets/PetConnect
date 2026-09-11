@@ -22,6 +22,36 @@ fechada, não só a leitura (rollback: `git revert` no commit que mudou
 O texto exato de antes e depois está no histórico do git de `firestore.rules`
 (e reproduzido nas seções abaixo, para quem não tiver acesso ao repo).
 
+## ✅ 2026-09-11 — FASE 11, passo 2: `Localizacoes` write fechado de vez
+
+Deploy feito e **verificado por REST direto** (não só o exit code do CLI):
+POST autenticado em `Localizacoes` → `403 PERMISSION_DENIED` (antes: `200`,
+qualquer usuário logado conseguia escrever); `GET` autenticado continua
+`200` (histórico ainda legível); POST anônimo continua `403` (sem mudança).
+
+**Pegadinha encontrada e corrigida durante a verificação** (documentada em
+comentário no próprio `firestore.rules`): blocos `match` do Firestore não
+se sobrepõem por especificidade — eles se somam por OR. Um
+`allow write: if false` no bloco de `Localizacoes` **não bloqueava nada
+sozinho**, porque o catch-all `/{document=**}` também casa com
+`Localizacoes/{docId}` e concedia `write: if request.auth != null`, que
+"vazava" por cima. A primeira tentativa de correção (excluir `Localizacoes`
+comparando `document.size()`, onde `document` é a variável do wildcard
+`{document=**}`) também falhou: `document` é do tipo `path`, que não tem
+`.size()` — erro de tipo silencioso que o Firestore trata como condição
+`false`, o que **derrubaria a escrita de todas as coleções**, não só
+`Localizacoes` (pego no teste real antes de virar um problema em produção:
+um POST autenticado numa coleção qualquer não-relacionada voltou `403`
+inesperado). Correção final: indexar `request.path` (sempre
+`/databases/{db}/documents/<colecao>/...`) em vez da variável do wildcard —
+`request.path[3] != 'Localizacoes'`, sem warning de tipo, testado e
+confirmado (catch-all volta a liberar escrita em coleções não-relacionadas,
+e a subcoleção real `Pets/{petId}/localizacoes` usada pelo app antigo
+continua 100% funcional).
+
+Todos os documentos de teste criados durante a verificação foram apagados
+logo em seguida (Admin SDK, que ignora as regras).
+
 ## Conteúdo anterior ao endurecimento (deployado até 2026-09-11)
 
 ```
@@ -64,10 +94,10 @@ service cloud.firestore {
 | `Usuarios` create/update/delete → `... == data.uid` | Só o doc da "Gabrielly" tem campo `uid`. Nos outros 17, `resource.data.uid` é `undefined` → condição falsa → **update/delete negados**. Perfis antigos provavelmente só eram alterados por caminho administrativo/versão antiga. | 🟡 Inconsistência (fail-closed) |
 | `Pets` update/delete → `... == resource.data.userId` | Correto para os docs que têm `userId` (23 de 24). O pet com `userID` (maiúsculo) fica sem dono válido. | 🟡 |
 
-## Recomendação (situação após o passo 1)
+## Recomendação (situação após o passo 2 — FASE 11 fechada)
 
 1. ~~Endurecimento de baixo risco~~ ✅ feito em 2026-09-11 (catch-all + `Pets` + `Localizacoes` exigem login agora).
 2. ~~Versionar as regras~~ ✅ `firestore.rules` no repo, referenciado em `firebase.json`.
-3. **Próximo passo (ainda não feito):** `Localizacoes` → `write: if false` de vez (hoje só exige login; como não há mais uso real, pode ir direto pra bloqueado). Avaliar junto com o restante do endurecimento final.
-4. **Endurecimento final (resto da FASE 11):** após uso real nas FASES 4–10 validado (não só e2e), `allow read, write: if false` nas coleções que já têm equivalente 100% funcional na API (`Usuarios`, `Pets`); manter só o essencial pro app antigo até a FASE 13.
-5. Rate limiting/CORS/headers de segurança no backend — ainda não feito (fora do escopo do Firestore, mas parte do objetivo original da FASE 11).
+3. ~~`Localizacoes` → `write: if false` de vez~~ ✅ feito em 2026-09-11 (ver seção "passo 2" acima).
+4. ~~Rate limiting nos endpoints públicos da API~~ ✅ feito em 2026-09-11 (`/api/v1/public/**`, 30 leituras/min e 10 escritas/min por IP — ver `PetConnect-API/src/main/java/com/petconnect/api/shared/web/`).
+5. **Endurecimento final — deliberadamente NÃO feito ainda:** `allow read, write: if false` em `Usuarios`/`Pets` (as coleções que já têm equivalente 100% funcional na API). Está gated em uso real validado das FASES 4–10 (não só e2e) — hoje os 18 usuários reais ainda rodam o app antigo, que lê essas coleções direto do Firestore com as flags `USE_API_*` desligadas por padrão. Fechar agora quebraria o app pra eles. Só fazer depois que o app novo (com as flags ligadas) estiver em uso real validado, ou na FASE 13 (remoção total do Firestore).

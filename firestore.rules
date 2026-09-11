@@ -11,6 +11,31 @@ rules_version = '2';
 // real (página/Cloud Function) escrevendo em `Localizacoes` — os 95 registros
 // eram só histórico, já migrados para o MongoDB. Por isso já é seguro fechar
 // a escrita pública, não só a leitura.
+//
+// FASE 11, passo 2 — fecha COMPLETAMENTE a escrita em `Localizacoes` (coleção
+// de nível raiz, 2026-09-11). Importante: isto é diferente da subcoleção
+// `Pets/{petId}/localizacoes` (minúscula) que o app antigo usa de verdade
+// hoje (fica sob o catch-all abaixo, já exige login, não é afetada). A
+// coleção `Localizacoes` raiz é 100% legado morto — nenhum código (app
+// antigo, app novo ou backend) ainda escreve nela; só existe pra manter os
+// 95 registros históricos legíveis por quem já está logado.
+//
+// ATENÇÃO — pegadinha das regras do Firestore: blocos `match` não se
+// "sobrepõem" por especificidade, eles se somam por OR. Um `allow write:
+// if false` aqui NÃO bloqueia nada sozinho se o catch-all abaixo também
+// bate no mesmo caminho com uma condição mais permissiva (auth != null) —
+// o Firestore libera se QUALQUER bloco que casar permitir. Por isso o
+// catch-all abaixo exclui explicitamente `Localizacoes` da sua permissão
+// de escrita (confirmado com teste real via REST direto: sem essa
+// exclusão, a escrita "se if false" ainda passava).
+//
+// Segunda pegadinha, achada testando: a variável local `document` do
+// `{document=**}` é do tipo `path` mas NÃO tem `.size()` (erro de tipo
+// silencioso — o Firestore trata condição com erro como `false`, o que
+// teria derrubado a escrita de TODAS as coleções, não só Localizacoes,
+// se não fosse pego no teste real). Solução: indexar `request.path`
+// (sempre `/databases/{db}/documents/<colecao>/...`) em vez da variável
+// do wildcard.
 service cloud.firestore {
   match /databases/{database}/documents {
     match /Usuarios/{userId} {
@@ -29,15 +54,22 @@ service cloud.firestore {
     }
 
     match /Localizacoes/{docId} {
-      // Antes: allow read, write: if true;  (leitura E escrita públicas)
-      allow read, write: if request.auth != null;
+      // Antes: allow read, write: if request.auth != null;
+      // Coleção raiz morta (ver comentário acima) — leitura ainda liberada
+      // pra quem está logado (histórico), escrita fechada de vez.
+      allow read: if request.auth != null;
+      allow write: if false;
     }
 
     match /{document=**} {
       // Antes: allow read;  (catch-all liberava leitura de qualquer coisa,
       // mesmo sem login, para qualquer coleção sem regra própria)
       allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      // Exclui `Localizacoes` (nível raiz) — sem isto, esta regra mais
+      // permissiva "vazaria" write pra lá por cima do `if false` acima
+      // (ver comentário no bloco de Localizacoes). request.path[3] é o
+      // nome da coleção de nível raiz (0=databases,1=db,2=documents,3=colecao).
+      allow write: if request.auth != null && request.path[3] != 'Localizacoes';
     }
   }
 }

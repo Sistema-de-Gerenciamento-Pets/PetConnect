@@ -183,7 +183,7 @@ Verificado no Mongo: 0 pets sem `tutorId`, 0 locations sem `petId`, 2 usuários 
 Usuário optou por **"só local por enquanto"** (ver decisão abaixo): construir e validar os endpoints agora; a página pública em si e a URL real do QR ficam para quando houver hospedagem definida.
 
 - [x] `GET /api/v1/public/pets/{publicId}` — **sem autenticação**, DTO mínimo (`name`, `species`, `status`, `photoUrl`, `publicContactPhone`) — nunca `tutorId`/e-mail. Pet `ARCHIVED` ou `publicId` inexistente → 404.
-- [x] `POST /api/v1/public/pets/{publicId}/sightings` — relato anônimo (RF31), sem autenticação, grava `locations` com `source="PUBLIC_QR"`. **Sem rate limiting ainda** — anotado como pendente de endurecimento (FASE 11 ou antes de publicar de verdade).
+- [x] `POST /api/v1/public/pets/{publicId}/sightings` — relato anônimo (RF31), sem autenticação, grava `locations` com `source="PUBLIC_QR"`. Rate limiting adicionado na FASE 11 (10 escritas/min por IP).
 - [x] `GET/POST /api/v1/pets/{petId}/locations` (autenticado, RF32) — tutor vê o histórico completo (migrado + novo) e pode registrar avistamento manual com data passada.
 - [x] `SecurityConfig`/`FirebaseTokenAuthenticationFilter`: `/api/v1/public/**` liberado e nunca tenta validar token (um Bearer inválido não pode bloquear rota pública).
 - [x] Testes: `PublicPetControllerTest` (6), `LocationControllerTest` (5). **Verificado e2e sem nenhum token**: resumo público, 404 em id inexistente/arquivado, relato anônimo grava com `source=PUBLIC_QR`, tutor vê os avistamentos migrados + novos, cross-tenant → 404.
@@ -213,18 +213,18 @@ Usuário optou por **"só local por enquanto"** (ver decisão abaixo): construir
 
 ---
 
-## FASE 11 — Endurecer segurança e Firestore Rules — 🚧 EM ANDAMENTO (passo 1 concluído)
+## FASE 11 — Endurecer segurança e Firestore Rules — ✅ FECHADA (2026-09-11)
 
 Regras e histórico: [`../security/firestore-rules-deployed.md`](../security/firestore-rules-deployed.md) + `firestore.rules` na raiz do repo (fonte da verdade a partir de agora).
 
 - [x] **Passo 1 (2026-09-11, deployado e verificado):** `firestore.rules` criado no repo + referenciado em `firebase.json`; catch-all, `Pets` e `Localizacoes` passaram a exigir `request.auth != null` (fechou só o acesso **sem login nenhum** — nada que já exigia auth mudou). Confirmado com o usuário: nenhum fluxo público real ainda escrevia em `Localizacoes`, então a escrita também foi fechada (não só a leitura). Verificado via REST: anônimo → 403 em `Pets`/`Localizacoes`; autenticado → 200 continua normal.
-- [ ] `Localizacoes` → `write: if false` de vez (hoje exige login; sem uso real, pode travar de vez).
-- [ ] **Endurecimento final:** após uso real (não só e2e) das FASES 4–10 validado, `allow read, write: if false` nas coleções com equivalente 100% funcional na API (`Usuarios`, `Pets`); manter só o mínimo pro app antigo até a FASE 13.
-- [ ] Rate limiting, CORS, headers de segurança no backend — inclui os endpoints públicos da FASE 9, que hoje não têm nenhuma proteção.
-- [ ] Revisão: nenhum segredo no repo (app ou backend); `git log` limpo de credenciais novas.
-- [ ] App Check / reforço de auth se aplicável.
+- [x] **Passo 2 (2026-09-11, deployado e verificado):** `Localizacoes` → `write: if false` de vez. Achado e corrigido durante a verificação: blocos `match` do Firestore se somam por OR (não por especificidade), então o `if false` sozinho não bloqueava nada — o catch-all ainda concedia escrita por cima. Corrigido excluindo `Localizacoes` explicitamente do catch-all via `request.path[3] != 'Localizacoes'` (uma primeira tentativa com `document.size()`, tipo `path`, gerou erro de tipo silencioso que teria derrubado a escrita de TODAS as coleções — pego no teste real antes de virar produção). Detalhe completo em [`firestore-rules-deployed.md`](../security/firestore-rules-deployed.md).
+- [x] **Rate limiting nos endpoints públicos (2026-09-11):** `/api/v1/public/**` (FASE 9) — 30 leituras/min e 10 escritas/min por IP, janela deslizante em memória, 429 `RATE_LIMITED` no envelope padrão. Ver `PetConnect-API/src/main/java/com/petconnect/api/shared/web/{RateLimiter,PublicEndpointRateLimitFilter}.java` e `RateLimitProperties.java`. Testado com 4 testes dedicados + verificado ao vivo contra o container Docker (33 requisições seguidas → 30 passam, resto 429).
+- [x] Revisão de segredos: nenhum `.env`/service-account/chave commitada em nenhum dos dois repos (`.gitignore` cobre `.env*`, `*serviceAccountKey*.json`; `git grep` por padrões de chave/token não achou nada nos arquivos versionados).
+- [ ] **Endurecimento final — deliberadamente NÃO feito:** `allow read, write: if false` em `Usuarios`/`Pets`. Gated em uso real validado das FASES 4–10 (não só e2e) — os 18 usuários reais ainda rodam o app antigo (flags `USE_API_*` off por padrão), que lê essas coleções direto do Firestore. Fechar agora quebraria o app pra eles. Só fazer depois de uso real validado com as flags ligadas, ou na FASE 13.
+- [ ] App Check / reforço de auth se aplicável — avaliar quando o endurecimento final acima for feito.
 
-**Rollback do passo 1:** `git revert` no commit que endureceu `firestore.rules` + `firebase deploy --only firestore:rules` de novo (ou colar o "Conteúdo anterior" de `firestore-rules-deployed.md` direto no Console).
+**Rollback:** `git revert` no(s) commit(s) que mudaram `firestore.rules` + `firebase deploy --only firestore:rules` de novo (o "Conteúdo anterior" de cada passo está documentado em `firestore-rules-deployed.md`). Rate limiting: reverter o commit do backend + rebuild do container — não afeta dados, só volta a não ter limite.
 
 ---
 
