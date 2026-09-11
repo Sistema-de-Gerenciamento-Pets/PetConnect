@@ -120,15 +120,16 @@ Verificado no Mongo: 0 pets sem `tutorId`, 0 locations sem `petId`, 2 usuários 
 
 ---
 
-## FASE 5 — Feature **Pets** no app via API
+## FASE 5 — Feature **Pets** no app via API — ✅ CONCLUÍDA
 
-- [ ] `GET/POST/PATCH/DELETE /api/v1/pets` + `GET /api/v1/pets/{id}`. Lista sempre escopada ao tutor logado no servidor.
-- [ ] `ApiPetRepository`. Streams viram: carrega ao abrir + `pull-to-refresh` + re-fetch ao voltar pra tela (R-04). Avaliar tela a tela.
-- [ ] `status` do pet exposto e editável (novo campo).
-- [ ] Feature flag `useApiForPets`. Telas: home (lista), pet_detail, pet_form.
-- [ ] Testar; comparar; corrigir.
+- [x] `GET/POST/PATCH/DELETE /api/v1/pets` + `GET /api/v1/pets/{id}` (`pet/web/PetController` + `pet/application/PetService`). Lista escopada ao tutor do token; pet de outro tutor → **404** (não vaza existência). `DELETE` faz cascata de `locations`.
+- [x] `ApiPetRepository` (`lib/features/pet/data/`): `watch*` = emissão única; mapeia `peso "12kg"` ↔ `weightKg` number, `dd/MM/yyyy` ↔ ISO, `especie`/`genero`/`porte` texto ↔ enums; `qrCodeId` ← `publicId` da API.
+- [x] `status` do pet exposto no DTO (aceito em `POST`/`PATCH`; default `ACTIVE`). UI do app ainda não tem seletor — decidir se entra no `pet_form`.
+- [x] Feature flag `AppConfig.useApiForPets` (`--dart-define=USE_API_PETS=true`, default off). Home: **pull-to-refresh**. `pet_form`/`pet_detail` invalidam `petsProvider`/`petProvider(id)` após mutação.
+- [x] Testes: backend `PetControllerTest` (7); app `flutter analyze` limpo + 23 testes Dart. **Verificado e2e:** `GET /pets` do tutor migrado → 3 pets (Felícia/Maevis/Nymeria); `POST/GET/PATCH/DELETE` ok com cascata; migrados intactos; cross-tenant → 404.
+- [ ] Teste no device com a flag — pendente do usuário.
 
-**Rollback:** `useApiForPets=false`.
+**Rollback:** `USE_API_PETS=false` (default).
 
 ---
 

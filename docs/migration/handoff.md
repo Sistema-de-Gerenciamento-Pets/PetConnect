@@ -1,7 +1,7 @@
 # Handoff — estado da migração e próximos passos
 
 > Documento vivo para retomar o trabalho (por mim numa próxima sessão ou por outra pessoa).
-> Atualizado em 2026-09-11, ao final da FASE 4.
+> Atualizado em 2026-09-11, ao final da FASE 5.
 
 ---
 
@@ -14,8 +14,9 @@
 | 2 — Auth Firebase + `/api/v1/me` | ✅ verificada e2e |
 | 3 — Migração de dados (`users`/`pets`/`locations`) | ✅ rodada real: 11 users, 21 pets, 64 locations |
 | 4 — Feature **Tutor** no app via API | ✅ verificada e2e (flag `USE_API_USUARIO`, default off) |
-| **5 — Feature Pets no app via API** | ⏭️ **próxima** |
-| 6–13 | pendentes (ver seção 5) |
+| 5 — Feature **Pets** no app via API | ✅ verificada e2e (flag `USE_API_PETS`, default off) |
+| **6 — Feature Vacinas** | ⏭️ **próxima** |
+| 7–13 | pendentes (ver seção 6) |
 
 **Repositórios**
 - App Flutter: `C:\Users\Aleksander\Projetos\Mobile - Flutter\PetConnect` — `github.com/AleksGustavo/PetConnect`, branch de trabalho `feature/backend-spring-mongodb-migration`.
@@ -89,55 +90,45 @@ MONGODB_URI="mongodb://localhost:27018/petconnect" \
 
 ---
 
-## 4. FASE 4 — o que ficou pronto (referência para a FASE 5)
+## 4. FASES 4 e 5 — o que ficou pronto (molde para as próximas)
 
-- Backend `user/`: `MeController` (`GET`/`PATCH`/`DELETE /api/v1/me`), `UserService` (provisiona no 1º acesso, `update`, `deleteAccount` com cascata), `UserResponse`/`UpdateMeRequest`.
-- App: `ApiClient`, `ApiException`, `AppConfig`, `ApiUsuarioRepository`, `apiClientProvider`, provider condicional pela flag.
-- Padrão de mapeamento data/enum PT↔API estabelecido no `ApiUsuarioRepository`.
-- **Pendente do usuário:** rodar no device com `USE_API_USUARIO=true` e validar cadastro/edição/exclusão contra a versão Firestore (flag off).
+- **Backend `user/`**: `MeController` (`GET`/`PATCH`/`DELETE /api/v1/me`), `UserService` (provisiona no 1º acesso, `update`, `deleteAccount` com cascata).
+- **Backend `pet/`**: `PetController` (`GET` lista + `GET/POST/PATCH/DELETE /{id}`), `PetService` (`ownedOr404` — posse por `tutorId`), `PetResponse`/`CreatePetRequest`/`UpdatePetRequest`.
+- **App**: `ApiClient`/`ApiException`/`AppConfig` (`lib/core/`), `ApiUsuarioRepository`, `ApiPetRepository`, providers condicionais pelas flags `USE_API_USUARIO`/`USE_API_PETS`.
+- **Padrões estabelecidos** (copiar nas fases 6–8):
+  - Repositório de API: `watch*` = `Stream.fromFuture` (emissão única); tela invalida o provider após mutar; Home tem pull-to-refresh.
+  - Mapeamento `dd/MM/yyyy` ↔ ISO e rótulos PT ↔ enums (mapas estáticos no repositório).
+  - Backend: DTO de request com Bean Validation; `ownedOr404`; 404 (não 403) para recurso de outro tutor; `@DeleteMapping` → 204 + cascata.
+  - Teste de controller: `@SpringBootTest @AutoConfigureMockMvc` + `@MockitoBean FirebaseTokenVerifier`, usuários salvos direto no repo, `JsonPath.read` para pegar ids.
+- **Pendente do usuário:** rodar no device com `USE_API_USUARIO=true USE_API_PETS=true` e comparar com as flags off (Firestore).
 
 ---
 
-## 5. FASE 5 — Feature **Pets** no app via API (passo a passo)
+## 5. FASE 6 — Feature **Vacinas** (passo a passo)
 
-### 5.1 Backend — módulo `pet` (hoje só tem o domínio da migração)
-Criar, seguindo o molde do módulo `user`:
-1. `pet/web/PetController` sob `/api/v1/pets`:
-   - `GET /api/v1/pets` → lista os pets **do tutor logado** (`principal.userId()` → `pets.findByTutorId`). Nunca aceitar `tutorId` do cliente.
-   - `GET /api/v1/pets/{id}` → 1 pet; 404 se não for do tutor.
-   - `POST /api/v1/pets` → cria (`tutorId` = logado, `publicId` novo, `status=ACTIVE`).
-   - `PATCH /api/v1/pets/{id}` → atualiza campos.
-   - `DELETE /api/v1/pets/{id}` → apaga o pet + cascata de `locations` (e, no futuro, vacinas/consultas/histórico).
-2. `pet/web/PetResponse` (DTO) + `pet/web/CreatePetRequest` / `UpdatePetRequest` com Bean Validation.
-3. `pet/application/PetService` — regra de posse (`tutorId == logado`) em toda operação de `{id}`; lançar `ApiException.notFound`/`forbidden`.
-4. Testes `PetControllerTest` (molde do `MeControllerTest`): CRUD, escopo por tutor, 404 em pet de outro, payload inválido → 400.
+Carteira de vacina de um pet. **Sem migração de dados** (subcoleção `Pets/*/vacinas` vazia). Molde: módulo `pet` + `ApiPetRepository`.
 
-**Campos** (ver `docs/database/mongodb-target-schema.md`): `name`, `species` (DOG/CAT/OTHER), `breed`, `color`, `gender` (MALE/FEMALE/UNKNOWN), `size` (SMALL/MEDIUM/LARGE), `weightKg` (number), `birthDate` (ISO), `status` (ACTIVE/LOST/FOUND/DECEASED/ARCHIVED), `vaccinatedFlag`, `publicContactPhone`, `photoUrl`. Expor `publicId` (read-only).
+### 5.1 Backend — módulo `vaccine`
+1. `vaccine/domain/Vaccine` (`@Document("vaccines")`): `id`, `petId` (indexado), `name`, `appliedAt` (Date), `nextDoseAt` (Date, opcional), `veterinarian`, `notes`, timestamps. (Campos extras do schema-alvo — `manufacturer`/`batch`/`dose`/`clinic`/`proofUrl` — podem ficar para depois.)
+2. `vaccine/infrastructure/VaccineRepository` — `findByPetIdOrderByAppliedAtDesc(petId)`, `deleteByPetId(petId)`, `deleteByPetIdIn(...)`.
+3. `vaccine/application/VaccineService` — **toda** operação recebe o `tutorId` do token e valida que o `petId` pertence a ele (reusar `PetService.get(tutorId, petId)` como checagem de posse; pode-se extrair um `PetOwnership` component ou injetar `PetService`). 404 se o pet não é do tutor ou a vacina não é do pet.
+4. `vaccine/web/VaccineController` sob **`/api/v1/pets/{petId}/vaccines`**: `GET` (lista), `POST` (201), `PATCH /{vaccineId}`, `DELETE /{vaccineId}` (204). DTOs `VaccineResponse` / `SaveVaccineRequest` (Bean Validation: `name` `@NotBlank`, `appliedAt` `@NotNull`).
+5. **Cascata:** em `PetService.delete`, além de `locations`, chamar `vaccines.deleteByPetIdIn(...)`. Atualizar `PetControllerTest` e `UserService.deleteAccount` (a exclusão de conta já apaga pets → e agora as vacinas).
+6. `VaccineControllerTest`: CRUD, escopo (vacina de pet de outro tutor → 404), 400 sem `name`/`appliedAt`.
 
-### 5.2 App — `ApiPetRepository`
-1. `lib/features/pet/data/api_pet_repository.dart` implementando `PetRepository` (interface atual: `watchPets(userId)`, `watchPet(id)`, `createPet→String`, `updatePet`, `deletePet`):
-   - `watchPets` / `watchPet` → `Stream.fromFuture` (emissão única).
-   - `createPet` → `POST /pets`, devolve o `id` do body.
-   - `updatePet` / `deletePet` → `PATCH`/`DELETE /pets/{id}`.
-   - Mapear `Pet` (domínio do app) ↔ `PetResponse`. O `Pet` do app usa `peso` como String (`"12kg"`) e datas `dd/MM/yyyy`; a API usa `weightKg` number e ISO — converter nos dois sentidos. `especie`/`porte`/`genero` texto livre ↔ enums (reusar a ideia dos mapas do `ApiUsuarioRepository`; cuidado que os valores de UI do pet podem diferir dos do usuário — conferir as telas `pet_form_screen`).
-2. Reusar `apiClientProvider`.
+### 5.2 App — `ApiVacinaRepository`
+1. Ver a interface atual: `lib/features/pet/domain/vacina_repository.dart` (`watchVacinas(petId)`, `createVacina`, `updateVacina`, `deleteVacina`). Model `Vacina` em `domain/vacina.dart` — datas `dd/MM/yyyy`.
+2. `lib/features/pet/data/api_vacina_repository.dart` implementando a interface via `/api/v1/pets/{petId}/vaccines`. `watchVacinas` = emissão única; converter datas.
+3. Regra de alerta (`vacina_alerta.dart`) **fica no app** — não precisa do backend.
 
 ### 5.3 App — providers + telas
-- `lib/features/pet/presentation/providers/pet_providers.dart`: `petRepositoryProvider` alterna `ApiPetRepository` ↔ `FirebasePetRepository` por `AppConfig.useApiForPets`.
-- `petsProvider` / `petProvider.family` continuam `StreamProvider`; após criar/editar/excluir, as telas devem `ref.invalidate(petsProvider)` (e `petProvider(id)`).
-- Adicionar **pull-to-refresh** na lista da Home (`RefreshIndicator` → `ref.invalidate(petsProvider)`).
-- Campo `status` do pet: por ora pode ficar fora da UI (default ACTIVE) ou expor um seletor simples no `pet_form` — decidir com o usuário.
+- `vacina_providers.dart`: `vacinaRepositoryProvider` alterna Api ↔ Firebase por `AppConfig.useApiForVacinas` (adicionar a flag em `app_config.dart`).
+- Telas `vacina_list_screen` / `vacina_form_screen`: após mutar, `ref.invalidate(vacinasProvider(petId))`; pull-to-refresh na lista.
 
-### 5.4 Testar e comparar
-- `--dart-define=API_BASE_URL=… --dart-define=USE_API_USUARIO=true --dart-define=USE_API_PETS=true`.
-- Fluxos: listar pets (deve bater com o que está no Mongo — os 21 migrados aparecem para os tutores correspondentes), criar/editar/excluir, abrir detalhe.
-- Comparar com a flag off (Firestore).
-- Atualizar `test/features/pet/*` que usam `FakePetRepository` (assinaturas não mudam; só garantir que os widget tests continuam verdes).
-
-### 5.5 Fechar
-- `flutter analyze` limpo, testes verdes, `mvn test` verde.
-- Commit na branch, marcar FASE 5 no plano mestre e aqui.
-- `USE_API_PETS` default **off**.
+### 5.4 Fechar
+- `flutter analyze` limpo, `flutter test test/core/ test/features/pet/` verde, `mvn -B test` verde.
+- **e2e** (script no scratchpad, molde `e2e-fase5.js`): criar vacina para um pet migrado, listar, editar, excluir; vacina de pet alheio → 404.
+- Commit, marcar FASE 6 no plano mestre e aqui. `USE_API_VACINAS` default off.
 
 ---
 
