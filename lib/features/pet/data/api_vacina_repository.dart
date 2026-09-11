@@ -16,7 +16,8 @@ class ApiVacinaRepository implements VacinaRepository {
   String _base(String petId) => '/pets/$petId/vaccines';
 
   @override
-  Stream<List<Vacina>> watchVacinas(String petId) => Stream.fromFuture(_list(petId));
+  Stream<List<Vacina>> watchVacinas(String petId) =>
+      Stream.fromFuture(_list(petId));
 
   Future<List<Vacina>> _list(String petId) async {
     final res = await _api.get(_base(petId));

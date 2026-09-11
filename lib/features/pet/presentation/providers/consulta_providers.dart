@@ -21,6 +21,7 @@ final consultaRepositoryProvider = Provider<ConsultaRepository>((ref) {
 /// `GET /api/v1/pets/{petId}/appointments` (emissão única); as telas chamam
 /// `ref.invalidate(consultasProvider(petId))` após mutações e a lista tem
 /// pull-to-refresh.
-final consultasProvider = StreamProvider.family<List<Consulta>, String>((ref, petId) {
+final consultasProvider =
+    StreamProvider.family<List<Consulta>, String>((ref, petId) {
   return ref.watch(consultaRepositoryProvider).watchConsultas(petId);
 });

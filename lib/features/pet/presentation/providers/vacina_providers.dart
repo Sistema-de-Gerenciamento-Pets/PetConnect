@@ -20,6 +20,7 @@ final vacinaRepositoryProvider = Provider<VacinaRepository>((ref) {
 /// Com [AppConfig.useApiForVacinas] a fonte é `GET /api/v1/pets/{petId}/vaccines`
 /// (emissão única); as telas chamam `ref.invalidate(vacinasProvider(petId))`
 /// após mutações e a lista tem pull-to-refresh.
-final vacinasProvider = StreamProvider.family<List<Vacina>, String>((ref, petId) {
+final vacinasProvider =
+    StreamProvider.family<List<Vacina>, String>((ref, petId) {
   return ref.watch(vacinaRepositoryProvider).watchVacinas(petId);
 });

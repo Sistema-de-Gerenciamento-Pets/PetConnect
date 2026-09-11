@@ -32,16 +32,24 @@ class PetFormScreen extends ConsumerStatefulWidget {
 
 class _PetFormScreenState extends ConsumerState<PetFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final _nomeController = TextEditingController(text: widget.pet?.nome ?? '');
-  late final _racaController = TextEditingController(text: widget.pet?.raca ?? '');
-  late final _corController = TextEditingController(text: widget.pet?.cor ?? '');
-  late final _especieController = TextEditingController(text: widget.pet?.especie ?? '');
-  late final _pesoController = TextEditingController(text: widget.pet?.peso ?? '');
+  late final _nomeController =
+      TextEditingController(text: widget.pet?.nome ?? '');
+  late final _racaController =
+      TextEditingController(text: widget.pet?.raca ?? '');
+  late final _corController =
+      TextEditingController(text: widget.pet?.cor ?? '');
+  late final _especieController =
+      TextEditingController(text: widget.pet?.especie ?? '');
+  late final _pesoController =
+      TextEditingController(text: widget.pet?.peso ?? '');
   late final _dataNascimentoController =
       TextEditingController(text: widget.pet?.dataNascimento ?? '');
 
-  late String _genero = widget.pet?.genero.isNotEmpty == true ? widget.pet!.genero : _generos.first;
-  late String _porte = widget.pet?.porte.isNotEmpty == true ? widget.pet!.porte : _portes.first;
+  late String _genero = widget.pet?.genero.isNotEmpty == true
+      ? widget.pet!.genero
+      : _generos.first;
+  late String _porte =
+      widget.pet?.porte.isNotEmpty == true ? widget.pet!.porte : _portes.first;
   late bool _vacinado = widget.pet?.vacinado ?? false;
   late String? _foto = widget.pet?.foto;
 
@@ -61,7 +69,8 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
   }
 
   Future<void> _pickDataNascimento() async {
-    final initial = parseBrDate(_dataNascimentoController.text) ?? DateTime(2020);
+    final initial =
+        parseBrDate(_dataNascimentoController.text) ?? DateTime(2020);
     final picked = await showDatePicker(
       context: context,
       initialDate: initial,
@@ -74,7 +83,8 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
   }
 
   Future<void> _escolherFoto() async {
-    final arquivo = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
+    final arquivo = await ImagePicker()
+        .pickImage(source: ImageSource.gallery, imageQuality: 85);
     if (arquivo == null) return;
 
     final bytes = await arquivo.readAsBytes();
@@ -92,13 +102,16 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
     });
 
     try {
-      final path = 'pets/fotos/$uid/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final path =
+          'pets/fotos/$uid/${DateTime.now().millisecondsSinceEpoch}.jpg';
       final url = await ref
           .read(anexoRepositoryProvider)
           .upload(path: path, bytes: bytes, contentType: 'image/jpeg');
       if (mounted) setState(() => _foto = url);
     } catch (e) {
-      if (mounted) setState(() => _error = describirErroUpload(e, item: 'a foto'));
+      if (mounted) {
+        setState(() => _error = describirErroUpload(e, item: 'a foto'));
+      }
     } finally {
       if (mounted) setState(() => _enviandoFoto = false);
     }
@@ -153,7 +166,8 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
       if (mounted) context.pop();
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Não foi possível salvar o pet. Tente novamente.');
+        setState(
+            () => _error = 'Não foi possível salvar o pet. Tente novamente.');
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -192,15 +206,18 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
                 TextFormField(
                   controller: _nomeController,
                   decoration: const InputDecoration(hintText: 'Nome:'),
-                  validator: (value) =>
-                      (value == null || value.trim().isEmpty) ? 'Informe o nome do pet.' : null,
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Informe o nome do pet.'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _especieController,
-                  decoration: const InputDecoration(hintText: 'Espécie (ex: Cachorro, Gato):'),
-                  validator: (value) =>
-                      (value == null || value.trim().isEmpty) ? 'Informe a espécie.' : null,
+                  decoration: const InputDecoration(
+                      hintText: 'Espécie (ex: Cachorro, Gato):'),
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Informe a espécie.'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -219,7 +236,8 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
                   items: _generos
                       .map((g) => DropdownMenuItem(value: g, child: Text(g)))
                       .toList(),
-                  onChanged: (value) => setState(() => _genero = value ?? _genero),
+                  onChanged: (value) =>
+                      setState(() => _genero = value ?? _genero),
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
@@ -228,12 +246,14 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
                   items: _portes
                       .map((p) => DropdownMenuItem(value: p, child: Text(p)))
                       .toList(),
-                  onChanged: (value) => setState(() => _porte = value ?? _porte),
+                  onChanged: (value) =>
+                      setState(() => _porte = value ?? _porte),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _pesoController,
-                  decoration: const InputDecoration(hintText: 'Peso (ex: 12kg):'),
+                  decoration:
+                      const InputDecoration(hintText: 'Peso (ex: 12kg):'),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -242,20 +262,24 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
                   onTap: _pickDataNascimento,
                   decoration: const InputDecoration(
                     hintText: 'Data de nascimento:',
-                    suffixIcon: Icon(Icons.calendar_today, color: AppColors.textMuted),
+                    suffixIcon:
+                        Icon(Icons.calendar_today, color: AppColors.textMuted),
                   ),
                 ),
                 const SizedBox(height: 16),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Vacinado', style: TextStyle(color: AppColors.textPrimary)),
+                  title: const Text('Vacinado',
+                      style: TextStyle(color: AppColors.textPrimary)),
                   value: _vacinado,
                   activeThumbColor: AppColors.brandDark,
                   onChanged: (value) => setState(() => _vacinado = value),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
-                  Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
+                  Text(_error!,
+                      style: const TextStyle(
+                          color: AppColors.error, fontSize: 13)),
                 ],
                 const SizedBox(height: 24),
                 ElevatedButton(

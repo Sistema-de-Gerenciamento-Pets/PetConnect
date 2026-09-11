@@ -83,7 +83,8 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: 20),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: _AdicionarPetCta(onTap: () => context.push('/pet/novo')),
+                      child: _AdicionarPetCta(
+                          onTap: () => context.push('/pet/novo')),
                     ),
                     const SizedBox(height: 24),
                     const Padding(
@@ -103,7 +104,8 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
                     Expanded(
                       child: petsAsync.when(
-                        loading: () => const Center(child: CircularProgressIndicator()),
+                        loading: () =>
+                            const Center(child: CircularProgressIndicator()),
                         error: (_, __) => const Center(
                           child: Text(
                             'Não foi possível carregar seus pets.',
@@ -128,7 +130,8 @@ class HomeScreen extends ConsumerWidget {
                                     child: Text(
                                       'Você ainda não cadastrou nenhum pet.\nToque em "Adicionar Novo Pet" para começar.',
                                       textAlign: TextAlign.center,
-                                      style: TextStyle(color: AppColors.textMuted),
+                                      style:
+                                          TextStyle(color: AppColors.textMuted),
                                     ),
                                   ),
                                 ],
@@ -142,7 +145,8 @@ class HomeScreen extends ConsumerWidget {
                               physics: const AlwaysScrollableScrollPhysics(),
                               padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                               itemCount: pets.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 12),
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 12),
                               itemBuilder: (context, index) {
                                 final pet = pets[index];
                                 return PetCard(
@@ -188,7 +192,8 @@ class _Cabecalho extends StatelessWidget {
         CircleAvatar(
           radius: 32,
           backgroundColor: AppColors.background,
-          backgroundImage: usuario?.foto != null ? NetworkImage(usuario!.foto!) : null,
+          backgroundImage:
+              usuario?.foto != null ? NetworkImage(usuario!.foto!) : null,
           child: usuario?.foto == null
               ? const Icon(Icons.person, size: 32, color: AppColors.brandMedium)
               : null,
@@ -225,7 +230,8 @@ class _Cabecalho extends StatelessWidget {
 }
 
 class _BotaoCircular extends StatelessWidget {
-  const _BotaoCircular({required this.icon, required this.tooltip, required this.onTap});
+  const _BotaoCircular(
+      {required this.icon, required this.tooltip, required this.onTap});
 
   final IconData icon;
   final String tooltip;
@@ -284,7 +290,8 @@ class _AdicionarPetCta extends StatelessWidget {
                     ),
                     Text(
                       'Cadastre um novo pet no app',
-                      style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                      style:
+                          TextStyle(color: AppColors.textMuted, fontSize: 12),
                     ),
                   ],
                 ),
@@ -311,7 +318,8 @@ class _RodapeInfo extends StatelessWidget {
       ),
       child: const Row(
         children: [
-          Icon(Icons.verified_user_outlined, color: Color(0xFF43A047), size: 20),
+          Icon(Icons.verified_user_outlined,
+              color: Color(0xFF43A047), size: 20),
           SizedBox(width: 12),
           Expanded(
             child: Text(

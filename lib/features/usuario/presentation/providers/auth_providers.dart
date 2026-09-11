@@ -9,9 +9,11 @@ import '../../data/firebase_usuario_repository.dart';
 import '../../domain/usuario.dart';
 import '../../domain/usuario_repository.dart';
 
-final firebaseAuthProvider = Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
+final firebaseAuthProvider =
+    Provider<FirebaseAuth>((ref) => FirebaseAuth.instance);
 
-final firestoreProvider = Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
+final firestoreProvider =
+    Provider<FirebaseFirestore>((ref) => FirebaseFirestore.instance);
 
 /// Cliente da API Spring. Anexa o Firebase ID Token do usuário logado.
 final apiClientProvider = Provider<ApiClient>((ref) {

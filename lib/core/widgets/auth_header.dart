@@ -50,10 +50,12 @@ class AuthHeader extends StatelessWidget {
                       alignment: Alignment.topLeft,
                       child: IconButton(
                         onPressed: onBack,
-                        icon: const Icon(Icons.arrow_back, color: AppColors.textOnBrand),
+                        icon: const Icon(Icons.arrow_back,
+                            color: AppColors.textOnBrand),
                       ),
                     ),
-                  Image.asset('assets/images/logo.png', width: 160, height: 160),
+                  Image.asset('assets/images/logo.png',
+                      width: 160, height: 160),
                   const SizedBox(height: 24),
                   const Text(
                     'PetConnect',
@@ -68,7 +70,8 @@ class AuthHeader extends StatelessWidget {
                   const Text(
                     'Conectando corações perdidos aos seus lares',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textOnBrand, fontSize: 14),
+                    style:
+                        TextStyle(color: AppColors.textOnBrand, fontSize: 14),
                   ),
                 ],
               ),

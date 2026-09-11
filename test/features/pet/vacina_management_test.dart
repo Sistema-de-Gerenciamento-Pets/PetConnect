@@ -17,7 +17,8 @@ const _petId = 'pet-1';
 /// Os campos de data são `readOnly` e só aceitam valor via `showDatePicker`
 /// (não dá pra usar `tester.enterText` neles) — abre o calendário a partir
 /// do campo de índice [campoIndex] e seleciona o dia [dia] do mês atual.
-Future<void> _selecionarDia(WidgetTester tester, int campoIndex, int dia) async {
+Future<void> _selecionarDia(
+    WidgetTester tester, int campoIndex, int dia) async {
   await tester.tap(find.byType(TextFormField).at(campoIndex));
   await tester.pumpAndSettle();
   await tester.tap(find.text('$dia'));
@@ -27,7 +28,8 @@ Future<void> _selecionarDia(WidgetTester tester, int campoIndex, int dia) async 
 }
 
 void main() {
-  testWidgets('registra, edita e exclui uma vacina, com alerta de próxima dose', (tester) async {
+  testWidgets('registra, edita e exclui uma vacina, com alerta de próxima dose',
+      (tester) async {
     tester.view.physicalSize = const Size(800, 1600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -38,10 +40,13 @@ void main() {
     final router = GoRouter(
       initialLocation: '/',
       routes: [
-        GoRoute(path: '/', builder: (context, state) => const VacinaListScreen(petId: _petId)),
+        GoRoute(
+            path: '/',
+            builder: (context, state) => const VacinaListScreen(petId: _petId)),
         GoRoute(
           path: '/pet/:id/vacinas/nova',
-          builder: (context, state) => VacinaFormScreen(petId: state.pathParameters['id']!),
+          builder: (context, state) =>
+              VacinaFormScreen(petId: state.pathParameters['id']!),
         ),
         GoRoute(
           path: '/pet/:id/vacinas/:vacinaId/editar',
@@ -57,9 +62,11 @@ void main() {
       ProviderScope(
         overrides: [
           vacinaRepositoryProvider.overrideWithValue(fakeRepo),
-          vacinasProvider.overrideWith((ref, petId) => fakeRepo.watchVacinas(petId)),
+          vacinasProvider
+              .overrideWith((ref, petId) => fakeRepo.watchVacinas(petId)),
         ],
-        child: MaterialApp.router(theme: AppTheme.light(), routerConfig: router),
+        child:
+            MaterialApp.router(theme: AppTheme.light(), routerConfig: router),
       ),
     );
     await tester.pumpAndSettle();
@@ -77,7 +84,8 @@ void main() {
 
     final hoje = DateTime.now();
     await _selecionarDia(tester, 1, hoje.day); // data de aplicação
-    await _selecionarDia(tester, 2, hoje.day); // próxima dose (mesmo dia = "hoje", já dentro da janela)
+    await _selecionarDia(tester, 2,
+        hoje.day); // próxima dose (mesmo dia = "hoje", já dentro da janela)
 
     await tester.tap(find.widgetWithText(ElevatedButton, 'SALVAR'));
     await tester.pumpAndSettle();
@@ -102,7 +110,8 @@ void main() {
     await tester.tap(find.byTooltip('Excluir vacina'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('excluir o registro de "V10 Editada"'), findsOneWidget);
+    expect(find.textContaining('excluir o registro de "V10 Editada"'),
+        findsOneWidget);
 
     await tester.tap(find.text('Excluir'));
     await tester.pumpAndSettle();

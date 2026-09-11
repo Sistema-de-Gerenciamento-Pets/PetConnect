@@ -22,6 +22,7 @@ final localizacaoRepositoryProvider = Provider<LocalizacaoRepository>((ref) {
 /// migrado do Firestore); as telas chamam
 /// `ref.invalidate(localizacoesProvider(petId))` após registrar um novo
 /// avistamento e a lista tem pull-to-refresh.
-final localizacoesProvider = StreamProvider.family<List<Localizacao>, String>((ref, petId) {
+final localizacoesProvider =
+    StreamProvider.family<List<Localizacao>, String>((ref, petId) {
   return ref.watch(localizacaoRepositoryProvider).watchLocalizacoes(petId);
 });

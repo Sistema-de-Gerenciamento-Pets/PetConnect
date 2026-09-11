@@ -40,8 +40,8 @@ int? idadeEmAnos(String dataNascimento, {DateTime? agora}) {
 
   final hoje = agora ?? DateTime.now();
   var idade = hoje.year - nascimento.year;
-  final aniversarioJaPassouEsteAno =
-      hoje.month > nascimento.month || (hoje.month == nascimento.month && hoje.day >= nascimento.day);
+  final aniversarioJaPassouEsteAno = hoje.month > nascimento.month ||
+      (hoje.month == nascimento.month && hoje.day >= nascimento.day);
   if (!aniversarioJaPassouEsteAno) idade--;
   return idade < 0 ? null : idade;
 }

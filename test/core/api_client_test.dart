@@ -46,7 +46,8 @@ void main() {
     expect(captured.headers.containsKey('Authorization'), false);
   });
 
-  test('resposta de erro com envelope vira ApiException com code/message', () async {
+  test('resposta de erro com envelope vira ApiException com code/message',
+      () async {
     final api = clientReturning((req) => http.Response(
           jsonEncode({
             'timestamp': '2026-09-10T00:00:00Z',
@@ -58,7 +59,10 @@ void main() {
           headers: {'content-type': 'application/json'},
         ));
 
-    final e = await api.get('/me').then<ApiException?>((_) => null).catchError((err) => err as ApiException);
+    final e = await api
+        .get('/me')
+        .then<ApiException?>((_) => null)
+        .catchError((err) => err as ApiException);
 
     expect(e, isA<ApiException>());
     expect(e!.status, 404);
@@ -84,7 +88,8 @@ void main() {
     final api = ApiClient(
       baseUrl: 'http://api.test',
       getToken: () async => null,
-      httpClient: MockClient((req) => Future.error(const SocketExceptionLike())),
+      httpClient:
+          MockClient((req) => Future.error(const SocketExceptionLike())),
     );
 
     try {

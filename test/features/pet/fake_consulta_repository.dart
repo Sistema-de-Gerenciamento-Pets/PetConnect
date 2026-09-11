@@ -22,7 +22,8 @@ class FakeConsultaRepository implements ConsultaRepository {
   @override
   Future<void> createConsulta(String petId, Consulta consulta) async {
     final id = 'consulta-${_nextId++}';
-    _store.putIfAbsent(petId, () => {})[id] = Consulta.fromMap(id, consulta.toMap());
+    _store.putIfAbsent(petId, () => {})[id] =
+        Consulta.fromMap(id, consulta.toMap());
     _changes.add(null);
   }
 

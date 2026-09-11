@@ -23,7 +23,8 @@ class ConsultaListScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: const Text('Consultas', style: TextStyle(color: AppColors.textPrimary)),
+        title: const Text('Consultas',
+            style: TextStyle(color: AppColors.textPrimary)),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       floatingActionButton: FloatingActionButton(
@@ -36,7 +37,8 @@ class ConsultaListScreen extends ConsumerWidget {
         child: consultasAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => const Center(
-            child: Text('Não foi possível carregar as consultas.', style: TextStyle(color: AppColors.error)),
+            child: Text('Não foi possível carregar as consultas.',
+                style: TextStyle(color: AppColors.error)),
           ),
           data: (consultas) {
             if (consultas.isEmpty) {
@@ -62,9 +64,15 @@ class ConsultaListScreen extends ConsumerWidget {
               );
             }
 
-            final futuras = consultas.where((c) => c.status == ConsultaStatus.agendada).toList();
-            final concluidas = consultas.where((c) => c.status == ConsultaStatus.realizada).toList();
-            final canceladas = consultas.where((c) => c.status == ConsultaStatus.cancelada).toList();
+            final futuras = consultas
+                .where((c) => c.status == ConsultaStatus.agendada)
+                .toList();
+            final concluidas = consultas
+                .where((c) => c.status == ConsultaStatus.realizada)
+                .toList();
+            final canceladas = consultas
+                .where((c) => c.status == ConsultaStatus.cancelada)
+                .toList();
 
             return RefreshIndicator(
               onRefresh: () async {
@@ -75,9 +83,12 @@ class ConsultaListScreen extends ConsumerWidget {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 96),
                 children: [
-                  if (futuras.isNotEmpty) ..._secao(context, ref, 'Futuras', futuras),
-                  if (concluidas.isNotEmpty) ..._secao(context, ref, 'Concluídas', concluidas),
-                  if (canceladas.isNotEmpty) ..._secao(context, ref, 'Canceladas', canceladas),
+                  if (futuras.isNotEmpty)
+                    ..._secao(context, ref, 'Futuras', futuras),
+                  if (concluidas.isNotEmpty)
+                    ..._secao(context, ref, 'Concluídas', concluidas),
+                  if (canceladas.isNotEmpty)
+                    ..._secao(context, ref, 'Canceladas', canceladas),
                 ],
               ),
             );
@@ -87,27 +98,35 @@ class ConsultaListScreen extends ConsumerWidget {
     );
   }
 
-  List<Widget> _secao(BuildContext context, WidgetRef ref, String titulo, List<Consulta> consultas) {
+  List<Widget> _secao(BuildContext context, WidgetRef ref, String titulo,
+      List<Consulta> consultas) {
     return [
       Text(
         titulo,
-        style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 15),
+        style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+            fontSize: 15),
       ),
       const SizedBox(height: 8),
       for (final consulta in consultas) ...[
         ConsultaTile(
           consulta: consulta,
-          onTap: () => context.push('/pet/$petId/consultas/${consulta.id}/editar', extra: consulta),
+          onTap: () => context.push(
+              '/pet/$petId/consultas/${consulta.id}/editar',
+              extra: consulta),
           onMarcarRealizada: consulta.status == ConsultaStatus.agendada
               ? () => ref
                   .read(consultaRepositoryProvider)
-                  .updateConsulta(petId, consulta.copyWith(status: ConsultaStatus.realizada))
+                  .updateConsulta(petId,
+                      consulta.copyWith(status: ConsultaStatus.realizada))
                   .then((_) => ref.invalidate(consultasProvider(petId)))
               : null,
           onCancelar: consulta.status == ConsultaStatus.agendada
               ? () => ref
                   .read(consultaRepositoryProvider)
-                  .updateConsulta(petId, consulta.copyWith(status: ConsultaStatus.cancelada))
+                  .updateConsulta(petId,
+                      consulta.copyWith(status: ConsultaStatus.cancelada))
                   .then((_) => ref.invalidate(consultasProvider(petId)))
               : null,
         ),

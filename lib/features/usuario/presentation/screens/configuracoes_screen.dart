@@ -10,7 +10,8 @@ class ConfiguracoesScreen extends ConsumerStatefulWidget {
   const ConfiguracoesScreen({super.key});
 
   @override
-  ConsumerState<ConfiguracoesScreen> createState() => _ConfiguracoesScreenState();
+  ConsumerState<ConfiguracoesScreen> createState() =>
+      _ConfiguracoesScreenState();
 }
 
 class _ConfiguracoesScreenState extends ConsumerState<ConfiguracoesScreen> {
@@ -54,7 +55,8 @@ class _ConfiguracoesScreenState extends ConsumerState<ConfiguracoesScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Excluir conta', style: TextStyle(color: AppColors.error)),
+            child: const Text('Excluir conta',
+                style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -72,7 +74,9 @@ class _ConfiguracoesScreenState extends ConsumerState<ConfiguracoesScreen> {
       if (mounted) {
         setState(() => _excluindo = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Não foi possível excluir a conta. Tente novamente.')),
+          const SnackBar(
+              content:
+                  Text('Não foi possível excluir a conta. Tente novamente.')),
         );
       }
     }
@@ -87,14 +91,16 @@ class _ConfiguracoesScreenState extends ConsumerState<ConfiguracoesScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: const Text('Configurações', style: TextStyle(color: AppColors.textPrimary)),
+        title: const Text('Configurações',
+            style: TextStyle(color: AppColors.textPrimary)),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: SafeArea(
         child: usuarioAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => const Center(
-            child: Text('Não foi possível carregar seus dados.', style: TextStyle(color: AppColors.error)),
+            child: Text('Não foi possível carregar seus dados.',
+                style: TextStyle(color: AppColors.error)),
           ),
           data: (usuario) {
             if (usuario == null) return const SizedBox.shrink();
@@ -103,16 +109,23 @@ class _ConfiguracoesScreenState extends ConsumerState<ConfiguracoesScreen> {
               padding: const EdgeInsets.symmetric(vertical: 8),
               children: [
                 ListTile(
-                  leading: const Icon(Icons.person_outline, color: AppColors.textPrimary),
-                  title: const Text('Editar perfil', style: TextStyle(color: AppColors.textPrimary)),
-                  subtitle: const Text('Nome, telefone e foto', style: TextStyle(color: AppColors.textMuted)),
-                  trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
-                  onTap: () => context.push('/configuracoes/editar-perfil', extra: usuario),
+                  leading: const Icon(Icons.person_outline,
+                      color: AppColors.textPrimary),
+                  title: const Text('Editar perfil',
+                      style: TextStyle(color: AppColors.textPrimary)),
+                  subtitle: const Text('Nome, telefone e foto',
+                      style: TextStyle(color: AppColors.textMuted)),
+                  trailing: const Icon(Icons.chevron_right,
+                      color: AppColors.textMuted),
+                  onTap: () => context.push('/configuracoes/editar-perfil',
+                      extra: usuario),
                 ),
                 const Divider(height: 1),
                 ListTile(
-                  leading: const Icon(Icons.logout, color: AppColors.textPrimary),
-                  title: const Text('Sair da conta', style: TextStyle(color: AppColors.textPrimary)),
+                  leading:
+                      const Icon(Icons.logout, color: AppColors.textPrimary),
+                  title: const Text('Sair da conta',
+                      style: TextStyle(color: AppColors.textPrimary)),
                   onTap: _handleSair,
                 ),
                 const Divider(height: 1),
@@ -121,10 +134,13 @@ class _ConfiguracoesScreenState extends ConsumerState<ConfiguracoesScreen> {
                       ? const SizedBox(
                           width: 24,
                           height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.error),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: AppColors.error),
                         )
-                      : const Icon(Icons.delete_forever_outlined, color: AppColors.error),
-                  title: const Text('Excluir conta', style: TextStyle(color: AppColors.error)),
+                      : const Icon(Icons.delete_forever_outlined,
+                          color: AppColors.error),
+                  title: const Text('Excluir conta',
+                      style: TextStyle(color: AppColors.error)),
                   subtitle: const Text(
                     'Remove sua conta e todos os seus pets permanentemente',
                     style: TextStyle(color: AppColors.textMuted),

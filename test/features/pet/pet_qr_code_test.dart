@@ -25,6 +25,7 @@ void main() {
   });
 
   test('usa o qrCodeId quando presente, preparando a regeneração (RF19)', () {
-    expect(publicPetUrl(_pet(qrCodeId: 'qr-abc')), 'https://pet-connect-c53f1.web.app/pet/qr-abc');
+    expect(publicPetUrl(_pet(qrCodeId: 'qr-abc')),
+        'https://pet-connect-c53f1.web.app/pet/qr-abc');
   });
 }

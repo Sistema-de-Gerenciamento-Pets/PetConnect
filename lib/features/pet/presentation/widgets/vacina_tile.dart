@@ -5,7 +5,11 @@ import '../../domain/vacina.dart';
 import '../../domain/vacina_alerta.dart';
 
 class VacinaTile extends StatelessWidget {
-  const VacinaTile({super.key, required this.vacina, required this.onTap, required this.onDelete});
+  const VacinaTile(
+      {super.key,
+      required this.vacina,
+      required this.onTap,
+      required this.onDelete});
 
   final Vacina vacina;
   final VoidCallback onTap;
@@ -31,21 +35,29 @@ class VacinaTile extends StatelessWidget {
                   children: [
                     Text(
                       vacina.nome,
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Aplicada em ${vacina.dataAplicacao}',
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                      style: const TextStyle(
+                          color: AppColors.textMuted, fontSize: 13),
                     ),
-                    if (vacina.proximaDose != null && vacina.proximaDose!.isNotEmpty) ...[
+                    if (vacina.proximaDose != null &&
+                        vacina.proximaDose!.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
                         'Próxima dose: ${vacina.proximaDose}',
                         style: TextStyle(
-                          color: alerta == VacinaAlerta.nenhum ? AppColors.textMuted : _corAlerta(alerta),
+                          color: alerta == VacinaAlerta.nenhum
+                              ? AppColors.textMuted
+                              : _corAlerta(alerta),
                           fontSize: 13,
-                          fontWeight: alerta == VacinaAlerta.nenhum ? FontWeight.normal : FontWeight.bold,
+                          fontWeight: alerta == VacinaAlerta.nenhum
+                              ? FontWeight.normal
+                              : FontWeight.bold,
                         ),
                       ),
                     ],
@@ -57,7 +69,8 @@ class VacinaTile extends StatelessWidget {
                 const SizedBox(width: 8),
               ],
               IconButton(
-                icon: const Icon(Icons.delete_outline, color: AppColors.textMuted),
+                icon: const Icon(Icons.delete_outline,
+                    color: AppColors.textMuted),
                 tooltip: 'Excluir vacina',
                 onPressed: onDelete,
               ),

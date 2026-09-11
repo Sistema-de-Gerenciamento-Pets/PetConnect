@@ -101,7 +101,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/pet/:id',
-        builder: (context, state) => PetDetailScreen(petId: state.pathParameters['id']!),
+        builder: (context, state) =>
+            PetDetailScreen(petId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/pet/:id/editar',
@@ -109,11 +110,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/pet/:id/vacinas',
-        builder: (context, state) => VacinaListScreen(petId: state.pathParameters['id']!),
+        builder: (context, state) =>
+            VacinaListScreen(petId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/pet/:id/vacinas/nova',
-        builder: (context, state) => VacinaFormScreen(petId: state.pathParameters['id']!),
+        builder: (context, state) =>
+            VacinaFormScreen(petId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/pet/:id/vacinas/:vacinaId/editar',
@@ -124,11 +127,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/pet/:id/historico',
-        builder: (context, state) => HistoricoListScreen(petId: state.pathParameters['id']!),
+        builder: (context, state) =>
+            HistoricoListScreen(petId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/pet/:id/historico/novo',
-        builder: (context, state) => HistoricoFormScreen(petId: state.pathParameters['id']!),
+        builder: (context, state) =>
+            HistoricoFormScreen(petId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/pet/:id/historico/:historicoId/editar',
@@ -139,11 +144,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/pet/:id/consultas',
-        builder: (context, state) => ConsultaListScreen(petId: state.pathParameters['id']!),
+        builder: (context, state) =>
+            ConsultaListScreen(petId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/pet/:id/consultas/nova',
-        builder: (context, state) => ConsultaFormScreen(petId: state.pathParameters['id']!),
+        builder: (context, state) =>
+            ConsultaFormScreen(petId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/pet/:id/consultas/:consultaId/editar',
@@ -154,11 +161,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/pet/:id/localizacao',
-        builder: (context, state) => LocalizacaoListScreen(petId: state.pathParameters['id']!),
+        builder: (context, state) =>
+            LocalizacaoListScreen(petId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/pet/:id/localizacao/nova',
-        builder: (context, state) => LocalizacaoFormScreen(petId: state.pathParameters['id']!),
+        builder: (context, state) =>
+            LocalizacaoFormScreen(petId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/configuracoes',
@@ -166,7 +175,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/configuracoes/editar-perfil',
-        builder: (context, state) => EditarPerfilScreen(usuario: state.extra as Usuario),
+        builder: (context, state) =>
+            EditarPerfilScreen(usuario: state.extra as Usuario),
       ),
     ],
   );

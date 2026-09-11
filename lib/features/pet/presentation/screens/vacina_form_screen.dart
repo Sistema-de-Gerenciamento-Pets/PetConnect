@@ -22,7 +22,8 @@ class VacinaFormScreen extends ConsumerStatefulWidget {
 
 class _VacinaFormScreenState extends ConsumerState<VacinaFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final _nomeController = TextEditingController(text: widget.vacina?.nome ?? '');
+  late final _nomeController =
+      TextEditingController(text: widget.vacina?.nome ?? '');
   late final _dataAplicacaoController =
       TextEditingController(text: widget.vacina?.dataAplicacao ?? '');
   late final _proximaDoseController =
@@ -97,7 +98,8 @@ class _VacinaFormScreenState extends ConsumerState<VacinaFormScreen> {
       if (mounted) context.pop();
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Não foi possível salvar a vacina. Tente novamente.');
+        setState(() =>
+            _error = 'Não foi possível salvar a vacina. Tente novamente.');
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -127,9 +129,11 @@ class _VacinaFormScreenState extends ConsumerState<VacinaFormScreen> {
               children: [
                 TextFormField(
                   controller: _nomeController,
-                  decoration: const InputDecoration(hintText: 'Nome da vacina:'),
-                  validator: (value) =>
-                      (value == null || value.trim().isEmpty) ? 'Informe o nome da vacina.' : null,
+                  decoration:
+                      const InputDecoration(hintText: 'Nome da vacina:'),
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Informe o nome da vacina.'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -138,10 +142,12 @@ class _VacinaFormScreenState extends ConsumerState<VacinaFormScreen> {
                   onTap: () => _pickData(_dataAplicacaoController),
                   decoration: const InputDecoration(
                     hintText: 'Data de aplicação:',
-                    suffixIcon: Icon(Icons.calendar_today, color: AppColors.textMuted),
+                    suffixIcon:
+                        Icon(Icons.calendar_today, color: AppColors.textMuted),
                   ),
-                  validator: (value) =>
-                      (value == null || value.trim().isEmpty) ? 'Informe a data de aplicação.' : null,
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Informe a data de aplicação.'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -150,23 +156,28 @@ class _VacinaFormScreenState extends ConsumerState<VacinaFormScreen> {
                   onTap: () => _pickData(_proximaDoseController),
                   decoration: const InputDecoration(
                     hintText: 'Próxima dose (opcional):',
-                    suffixIcon: Icon(Icons.calendar_today, color: AppColors.textMuted),
+                    suffixIcon:
+                        Icon(Icons.calendar_today, color: AppColors.textMuted),
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _veterinarioController,
-                  decoration: const InputDecoration(hintText: 'Veterinário/clínica (opcional):'),
+                  decoration: const InputDecoration(
+                      hintText: 'Veterinário/clínica (opcional):'),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _observacoesController,
                   maxLines: 3,
-                  decoration: const InputDecoration(hintText: 'Observações (opcional):'),
+                  decoration: const InputDecoration(
+                      hintText: 'Observações (opcional):'),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
-                  Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
+                  Text(_error!,
+                      style: const TextStyle(
+                          color: AppColors.error, fontSize: 13)),
                 ],
                 const SizedBox(height: 24),
                 ElevatedButton(

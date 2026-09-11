@@ -46,7 +46,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (mounted) setState(() => _error = translateAuthError(e.code));
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Não foi possível completar a operação. Tente novamente.');
+        setState(() =>
+            _error = 'Não foi possível completar a operação. Tente novamente.');
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -76,7 +77,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         senhaController: _senhaController,
                         submitting: _submitting,
                         senhaVisivel: _senhaVisivel,
-                        onToggleSenhaVisivel: () => setState(() => _senhaVisivel = !_senhaVisivel),
+                        onToggleSenhaVisivel: () =>
+                            setState(() => _senhaVisivel = !_senhaVisivel),
                         error: _error,
                         onSubmit: _handleLogin,
                         onForgotPassword: () => context.push('/esqueci-senha'),
@@ -125,7 +127,8 @@ class _LoginCard extends StatelessWidget {
     // em app_theme.dart), a pedido específico para a tela de login.
     final borda = OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: BorderSide(color: AppColors.brandLight.withValues(alpha: 0.45)),
+      borderSide:
+          BorderSide(color: AppColors.brandLight.withValues(alpha: 0.45)),
     );
     final bordaComFoco = OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
@@ -177,7 +180,9 @@ class _LoginCard extends StatelessWidget {
               focusedBorder: bordaComFoco,
               suffixIcon: IconButton(
                 icon: Icon(
-                  senhaVisivel ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  senhaVisivel
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
                   color: AppColors.textMuted,
                 ),
                 onPressed: onToggleSenhaVisivel,

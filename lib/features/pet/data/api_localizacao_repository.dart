@@ -18,12 +18,14 @@ class ApiLocalizacaoRepository implements LocalizacaoRepository {
   String _base(String petId) => '/pets/$petId/locations';
 
   @override
-  Stream<List<Localizacao>> watchLocalizacoes(String petId) => Stream.fromFuture(_list(petId));
+  Stream<List<Localizacao>> watchLocalizacoes(String petId) =>
+      Stream.fromFuture(_list(petId));
 
   Future<List<Localizacao>> _list(String petId) async {
     final res = await _api.get(_base(petId));
     final list = (res['data'] as List?) ?? const [];
-    final localizacoes = list.cast<Map<String, dynamic>>().map(_fromApi).toList();
+    final localizacoes =
+        list.cast<Map<String, dynamic>>().map(_fromApi).toList();
     localizacoes.sort((a, b) {
       final da = parseBrDate(a.data);
       final db = parseBrDate(b.data);

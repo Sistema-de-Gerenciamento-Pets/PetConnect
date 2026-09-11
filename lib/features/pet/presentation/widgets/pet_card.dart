@@ -8,7 +8,11 @@ import '../../domain/pet.dart';
 /// idade e um badge de gênero, com uma cor de destaque cíclica por posição
 /// na lista (ver [AppColors.petCardBackgrounds]).
 class PetCard extends StatelessWidget {
-  const PetCard({super.key, required this.pet, required this.colorIndex, required this.onTap});
+  const PetCard(
+      {super.key,
+      required this.pet,
+      required this.colorIndex,
+      required this.onTap});
 
   final Pet pet;
   final int colorIndex;
@@ -16,8 +20,10 @@ class PetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final background = AppColors.petCardBackgrounds[colorIndex % AppColors.petCardBackgrounds.length];
-    final accent = AppColors.petCardAccents[colorIndex % AppColors.petCardAccents.length];
+    final background = AppColors
+        .petCardBackgrounds[colorIndex % AppColors.petCardBackgrounds.length];
+    final accent =
+        AppColors.petCardAccents[colorIndex % AppColors.petCardAccents.length];
     final idade = idadeEmAnos(pet.dataNascimento);
     final generoFeminino = pet.genero.toLowerCase().startsWith('f');
 
@@ -37,8 +43,11 @@ class PetCard extends StatelessWidget {
                   CircleAvatar(
                     radius: 36,
                     backgroundColor: Colors.white,
-                    backgroundImage: pet.foto != null ? NetworkImage(pet.foto!) : null,
-                    child: pet.foto == null ? Icon(Icons.pets, color: accent, size: 32) : null,
+                    backgroundImage:
+                        pet.foto != null ? NetworkImage(pet.foto!) : null,
+                    child: pet.foto == null
+                        ? Icon(Icons.pets, color: accent, size: 32)
+                        : null,
                   ),
                   Positioned(
                     bottom: -2,
@@ -46,7 +55,8 @@ class PetCard extends StatelessWidget {
                     child: CircleAvatar(
                       radius: 13,
                       backgroundColor: accent,
-                      child: const Icon(Icons.pets, color: Colors.white, size: 14),
+                      child:
+                          const Icon(Icons.pets, color: Colors.white, size: 14),
                     ),
                   ),
                 ],
@@ -66,15 +76,19 @@ class PetCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      [pet.especie, if (idade != null) '$idade ${idade == 1 ? 'ano' : 'anos'}']
-                          .where((s) => s.isNotEmpty)
-                          .join(' · '),
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                      [
+                        pet.especie,
+                        if (idade != null)
+                          '$idade ${idade == 1 ? 'ano' : 'anos'}'
+                      ].where((s) => s.isNotEmpty).join(' · '),
+                      style: const TextStyle(
+                          color: AppColors.textMuted, fontSize: 13),
                     ),
                     if (pet.genero.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(999),
@@ -90,7 +104,10 @@ class PetCard extends StatelessWidget {
                             const SizedBox(width: 4),
                             Text(
                               pet.genero,
-                              style: TextStyle(fontSize: 12, color: accent, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: accent,
+                                  fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
@@ -103,7 +120,8 @@ class PetCard extends StatelessWidget {
               CircleAvatar(
                 radius: 20,
                 backgroundColor: accent,
-                child: const Icon(Icons.arrow_forward, color: Colors.white, size: 18),
+                child: const Icon(Icons.arrow_forward,
+                    color: Colors.white, size: 18),
               ),
             ],
           ),

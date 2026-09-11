@@ -22,7 +22,8 @@ class FakeVacinaRepository implements VacinaRepository {
   @override
   Future<void> createVacina(String petId, Vacina vacina) async {
     final id = 'vacina-${_nextId++}';
-    _store.putIfAbsent(petId, () => {})[id] = Vacina.fromMap(id, vacina.toMap());
+    _store.putIfAbsent(petId, () => {})[id] =
+        Vacina.fromMap(id, vacina.toMap());
     _changes.add(null);
   }
 

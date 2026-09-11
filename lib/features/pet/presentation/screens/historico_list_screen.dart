@@ -14,12 +14,14 @@ class HistoricoListScreen extends ConsumerWidget {
 
   final String petId;
 
-  Future<void> _confirmarExclusao(BuildContext context, WidgetRef ref, HistoricoMedico historico) async {
+  Future<void> _confirmarExclusao(
+      BuildContext context, WidgetRef ref, HistoricoMedico historico) async {
     final confirmou = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Excluir registro'),
-        content: const Text('Tem certeza que deseja excluir este registro de histórico médico?'),
+        content: const Text(
+            'Tem certeza que deseja excluir este registro de histórico médico?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -27,7 +29,8 @@ class HistoricoListScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Excluir', style: TextStyle(color: AppColors.error)),
+            child:
+                const Text('Excluir', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -44,7 +47,9 @@ class HistoricoListScreen extends ConsumerWidget {
         // mais no Storage.
       }
     }
-    await ref.read(historicoMedicoRepositoryProvider).deleteHistorico(petId, historico.id);
+    await ref
+        .read(historicoMedicoRepositoryProvider)
+        .deleteHistorico(petId, historico.id);
     ref.invalidate(historicoMedicoProvider(petId));
   }
 
@@ -57,7 +62,8 @@ class HistoricoListScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: const Text('Histórico médico', style: TextStyle(color: AppColors.textPrimary)),
+        title: const Text('Histórico médico',
+            style: TextStyle(color: AppColors.textPrimary)),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       floatingActionButton: FloatingActionButton(
@@ -70,7 +76,8 @@ class HistoricoListScreen extends ConsumerWidget {
         child: historicoAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => const Center(
-            child: Text('Não foi possível carregar o histórico.', style: TextStyle(color: AppColors.error)),
+            child: Text('Não foi possível carregar o histórico.',
+                style: TextStyle(color: AppColors.error)),
           ),
           data: (registros) {
             Future<void> atualizar() async {
@@ -109,8 +116,9 @@ class HistoricoListScreen extends ConsumerWidget {
                   final historico = registros[index];
                   return HistoricoTile(
                     historico: historico,
-                    onTap: () =>
-                        context.push('/pet/$petId/historico/${historico.id}/editar', extra: historico),
+                    onTap: () => context.push(
+                        '/pet/$petId/historico/${historico.id}/editar',
+                        extra: historico),
                     onDelete: () => _confirmarExclusao(context, ref, historico),
                   );
                 },

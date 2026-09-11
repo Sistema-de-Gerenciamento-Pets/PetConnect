@@ -27,7 +27,8 @@ class ApiHistoricoMedicoRepository implements HistoricoMedicoRepository {
   }
 
   @override
-  Stream<List<HistoricoMedico>> watchHistorico(String petId) => Stream.fromFuture(_list(petId));
+  Stream<List<HistoricoMedico>> watchHistorico(String petId) =>
+      Stream.fromFuture(_list(petId));
 
   Future<List<HistoricoMedico>> _list(String petId) async {
     final res = await _api.get(_base(petId));
@@ -49,7 +50,8 @@ class ApiHistoricoMedicoRepository implements HistoricoMedicoRepository {
 
   @override
   Future<void> updateHistorico(String petId, HistoricoMedico historico) async {
-    await _api.patch('${_base(petId)}/${historico.id}', _toApi(historico, incluirId: false));
+    await _api.patch(
+        '${_base(petId)}/${historico.id}', _toApi(historico, incluirId: false));
   }
 
   @override
@@ -70,6 +72,7 @@ class ApiHistoricoMedicoRepository implements HistoricoMedicoRepository {
         data: isoToBr(m['recordedAt'] as String?),
         descricao: (m['description'] ?? '') as String,
         veterinario: m['veterinarian'] as String?,
-        anexos: (m['attachments'] as List<dynamic>?)?.cast<String>() ?? const [],
+        anexos:
+            (m['attachments'] as List<dynamic>?)?.cast<String>() ?? const [],
       );
 }

@@ -4,18 +4,21 @@ import '../domain/pet.dart';
 import '../domain/pet_repository.dart';
 
 class FirebasePetRepository implements PetRepository {
-  FirebasePetRepository({required FirebaseFirestore firestore}) : _firestore = firestore;
+  FirebasePetRepository({required FirebaseFirestore firestore})
+      : _firestore = firestore;
 
   final FirebaseFirestore _firestore;
 
-  CollectionReference<Map<String, dynamic>> get _pets => _firestore.collection('Pets');
+  CollectionReference<Map<String, dynamic>> get _pets =>
+      _firestore.collection('Pets');
 
   @override
   Stream<List<Pet>> watchPets(String userId) {
     // Filtra por userId (RF12) — isolamento também é reforçado pelas regras
     // de segurança do Firestore (docs/seguranca.md), não só aqui na query.
     return _pets.where('userId', isEqualTo: userId).snapshots().map((snapshot) {
-      final pets = snapshot.docs.map((doc) => Pet.fromMap(doc.id, doc.data())).toList();
+      final pets =
+          snapshot.docs.map((doc) => Pet.fromMap(doc.id, doc.data())).toList();
       pets.sort((a, b) => a.nome.compareTo(b.nome));
       return pets;
     });

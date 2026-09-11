@@ -22,7 +22,8 @@ class FakeLocalizacaoRepository implements LocalizacaoRepository {
   @override
   Future<void> createLocalizacao(String petId, Localizacao localizacao) async {
     final id = 'localizacao-${_nextId++}';
-    _store.putIfAbsent(petId, () => {})[id] = Localizacao.fromMap(id, localizacao.toMap());
+    _store.putIfAbsent(petId, () => {})[id] =
+        Localizacao.fromMap(id, localizacao.toMap());
     _changes.add(null);
   }
 

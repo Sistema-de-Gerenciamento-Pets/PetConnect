@@ -5,7 +5,8 @@ import '../domain/vacina.dart';
 import '../domain/vacina_repository.dart';
 
 class FirebaseVacinaRepository implements VacinaRepository {
-  FirebaseVacinaRepository({required FirebaseFirestore firestore}) : _firestore = firestore;
+  FirebaseVacinaRepository({required FirebaseFirestore firestore})
+      : _firestore = firestore;
 
   final FirebaseFirestore _firestore;
 
@@ -15,7 +16,9 @@ class FirebaseVacinaRepository implements VacinaRepository {
   @override
   Stream<List<Vacina>> watchVacinas(String petId) {
     return _vacinas(petId).snapshots().map((snapshot) {
-      final vacinas = snapshot.docs.map((doc) => Vacina.fromMap(doc.id, doc.data())).toList();
+      final vacinas = snapshot.docs
+          .map((doc) => Vacina.fromMap(doc.id, doc.data()))
+          .toList();
       vacinas.sort((a, b) {
         final dataA = parseBrDate(a.dataAplicacao);
         final dataB = parseBrDate(b.dataAplicacao);

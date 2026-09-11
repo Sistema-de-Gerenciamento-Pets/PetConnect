@@ -43,10 +43,13 @@ void main() {
       initialLocation: '/',
       routes: [
         GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
-        GoRoute(path: '/pet/novo', builder: (context, state) => const PetFormScreen()),
+        GoRoute(
+            path: '/pet/novo',
+            builder: (context, state) => const PetFormScreen()),
         GoRoute(
           path: '/pet/:id',
-          builder: (context, state) => PetDetailScreen(petId: state.pathParameters['id']!),
+          builder: (context, state) =>
+              PetDetailScreen(petId: state.pathParameters['id']!),
         ),
         GoRoute(
           path: '/pet/:id/editar',
@@ -58,18 +61,22 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          currentUsuarioProvider.overrideWith((ref) => Stream.value(_tutorTeste)),
+          currentUsuarioProvider
+              .overrideWith((ref) => Stream.value(_tutorTeste)),
           petRepositoryProvider.overrideWithValue(fakeRepo),
-          petsProvider.overrideWith((ref) => fakeRepo.watchPets(_tutorTeste.id)),
+          petsProvider
+              .overrideWith((ref) => fakeRepo.watchPets(_tutorTeste.id)),
           petProvider.overrideWith((ref, id) => fakeRepo.watchPet(id)),
         ],
-        child: MaterialApp.router(theme: AppTheme.light(), routerConfig: router),
+        child:
+            MaterialApp.router(theme: AppTheme.light(), routerConfig: router),
       ),
     );
     await tester.pumpAndSettle();
 
     // Home vazia (nenhum pet cadastrado ainda).
-    expect(find.textContaining('Você ainda não cadastrou nenhum pet'), findsOneWidget);
+    expect(find.textContaining('Você ainda não cadastrou nenhum pet'),
+        findsOneWidget);
 
     // Criar pet (RF10, CT09).
     await tester.tap(find.byIcon(Icons.add));
@@ -119,6 +126,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Meus Pets'), findsOneWidget);
-    expect(find.textContaining('Você ainda não cadastrou nenhum pet'), findsOneWidget);
+    expect(find.textContaining('Você ainda não cadastrou nenhum pet'),
+        findsOneWidget);
   });
 }

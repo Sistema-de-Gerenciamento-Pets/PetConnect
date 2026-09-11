@@ -27,18 +27,21 @@ class ApiAnexoRepository implements AnexoRepository {
     final sig = await _api.post('/uploads/signature', const {});
     final cloudName = sig['cloudName'] as String;
 
-    final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/auto/upload');
+    final uri =
+        Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/auto/upload');
     final request = http.MultipartRequest('POST', uri)
       ..fields['api_key'] = sig['apiKey'] as String
       ..fields['timestamp'] = sig['timestamp'].toString()
       ..fields['signature'] = sig['signature'] as String
-      ..files.add(http.MultipartFile.fromBytes('file', bytes, filename: path.split('/').last));
+      ..files.add(http.MultipartFile.fromBytes('file', bytes,
+          filename: path.split('/').last));
 
     final streamedResponse = await _http.send(request);
     final response = await http.Response.fromStream(streamedResponse);
 
     if (response.statusCode != 200) {
-      throw Exception('Falha no upload para o Cloudinary (${response.statusCode}): ${response.body}');
+      throw Exception(
+          'Falha no upload para o Cloudinary (${response.statusCode}): ${response.body}');
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;

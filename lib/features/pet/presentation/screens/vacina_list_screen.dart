@@ -13,12 +13,14 @@ class VacinaListScreen extends ConsumerWidget {
 
   final String petId;
 
-  Future<void> _confirmarExclusao(BuildContext context, WidgetRef ref, Vacina vacina) async {
+  Future<void> _confirmarExclusao(
+      BuildContext context, WidgetRef ref, Vacina vacina) async {
     final confirmou = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Excluir vacina'),
-        content: Text('Tem certeza que deseja excluir o registro de "${vacina.nome}"?'),
+        content: Text(
+            'Tem certeza que deseja excluir o registro de "${vacina.nome}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -26,7 +28,8 @@ class VacinaListScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Excluir', style: TextStyle(color: AppColors.error)),
+            child:
+                const Text('Excluir', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -47,7 +50,8 @@ class VacinaListScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: const Text('Carteira de vacina', style: TextStyle(color: AppColors.textPrimary)),
+        title: const Text('Carteira de vacina',
+            style: TextStyle(color: AppColors.textPrimary)),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       floatingActionButton: FloatingActionButton(
@@ -60,7 +64,8 @@ class VacinaListScreen extends ConsumerWidget {
         child: vacinasAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => const Center(
-            child: Text('Não foi possível carregar as vacinas.', style: TextStyle(color: AppColors.error)),
+            child: Text('Não foi possível carregar as vacinas.',
+                style: TextStyle(color: AppColors.error)),
           ),
           data: (vacinas) {
             Future<void> atualizar() async {
@@ -99,7 +104,9 @@ class VacinaListScreen extends ConsumerWidget {
                   final vacina = vacinas[index];
                   return VacinaTile(
                     vacina: vacina,
-                    onTap: () => context.push('/pet/$petId/vacinas/${vacina.id}/editar', extra: vacina),
+                    onTap: () => context.push(
+                        '/pet/$petId/vacinas/${vacina.id}/editar',
+                        extra: vacina),
                     onDelete: () => _confirmarExclusao(context, ref, vacina),
                   );
                 },

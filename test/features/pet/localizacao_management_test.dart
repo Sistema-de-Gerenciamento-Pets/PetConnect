@@ -25,10 +25,14 @@ void main() {
     final router = GoRouter(
       initialLocation: '/',
       routes: [
-        GoRoute(path: '/', builder: (context, state) => const LocalizacaoListScreen(petId: _petId)),
+        GoRoute(
+            path: '/',
+            builder: (context, state) =>
+                const LocalizacaoListScreen(petId: _petId)),
         GoRoute(
           path: '/pet/:id/localizacao/nova',
-          builder: (context, state) => LocalizacaoFormScreen(petId: state.pathParameters['id']!),
+          builder: (context, state) =>
+              LocalizacaoFormScreen(petId: state.pathParameters['id']!),
         ),
       ],
     );
@@ -37,14 +41,17 @@ void main() {
       ProviderScope(
         overrides: [
           localizacaoRepositoryProvider.overrideWithValue(fakeRepo),
-          localizacoesProvider.overrideWith((ref, petId) => fakeRepo.watchLocalizacoes(petId)),
+          localizacoesProvider
+              .overrideWith((ref, petId) => fakeRepo.watchLocalizacoes(petId)),
         ],
-        child: MaterialApp.router(theme: AppTheme.light(), routerConfig: router),
+        child:
+            MaterialApp.router(theme: AppTheme.light(), routerConfig: router),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Nenhum avistamento registrado'), findsOneWidget);
+    expect(
+        find.textContaining('Nenhum avistamento registrado'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.add));
     await tester.pumpAndSettle();
@@ -56,7 +63,8 @@ void main() {
       find.byType(TextFormField).at(1),
       'Visto na praça central, sem coleira',
     );
-    await tester.enterText(find.byType(TextFormField).at(2), 'Vizinho João, (19) 99999-0000');
+    await tester.enterText(
+        find.byType(TextFormField).at(2), 'Vizinho João, (19) 99999-0000');
 
     await tester.tap(find.widgetWithText(ElevatedButton, 'SALVAR'));
     await tester.pumpAndSettle();

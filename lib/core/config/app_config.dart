@@ -30,13 +30,16 @@ class AppConfig {
   static const bool useApiForVacinas = bool.fromEnvironment('USE_API_VACINAS');
 
   /// FASE 7 — consultas via API.
-  static const bool useApiForConsultas = bool.fromEnvironment('USE_API_CONSULTAS');
+  static const bool useApiForConsultas =
+      bool.fromEnvironment('USE_API_CONSULTAS');
 
   /// FASE 8 — histórico médico via API.
-  static const bool useApiForHistorico = bool.fromEnvironment('USE_API_HISTORICO');
+  static const bool useApiForHistorico =
+      bool.fromEnvironment('USE_API_HISTORICO');
 
   /// FASE 9 — avistamentos (RF31/32) via API.
-  static const bool useApiForLocalizacao = bool.fromEnvironment('USE_API_LOCALIZACAO');
+  static const bool useApiForLocalizacao =
+      bool.fromEnvironment('USE_API_LOCALIZACAO');
 
   /// FASE 10 — upload/exclusão de anexo assinados pelo backend (Cloudinary).
   static const bool useApiForUpload = bool.fromEnvironment('USE_API_UPLOAD');

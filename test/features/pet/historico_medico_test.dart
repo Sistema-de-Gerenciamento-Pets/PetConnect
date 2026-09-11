@@ -19,7 +19,8 @@ import 'fake_historico_medico_repository.dart';
 
 const _petId = 'pet-1';
 
-Future<void> _selecionarDia(WidgetTester tester, int campoIndex, int dia) async {
+Future<void> _selecionarDia(
+    WidgetTester tester, int campoIndex, int dia) async {
   await tester.tap(find.byType(TextFormField).at(campoIndex));
   await tester.pumpAndSettle();
   await tester.tap(find.text('$dia'));
@@ -29,7 +30,8 @@ Future<void> _selecionarDia(WidgetTester tester, int campoIndex, int dia) async 
 }
 
 void main() {
-  testWidgets('registra, edita e exclui uma entrada de histórico médico', (tester) async {
+  testWidgets('registra, edita e exclui uma entrada de histórico médico',
+      (tester) async {
     tester.view.physicalSize = const Size(800, 1600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -40,10 +42,14 @@ void main() {
     final router = GoRouter(
       initialLocation: '/',
       routes: [
-        GoRoute(path: '/', builder: (context, state) => const HistoricoListScreen(petId: _petId)),
+        GoRoute(
+            path: '/',
+            builder: (context, state) =>
+                const HistoricoListScreen(petId: _petId)),
         GoRoute(
           path: '/pet/:id/historico/novo',
-          builder: (context, state) => HistoricoFormScreen(petId: state.pathParameters['id']!),
+          builder: (context, state) =>
+              HistoricoFormScreen(petId: state.pathParameters['id']!),
         ),
         GoRoute(
           path: '/pet/:id/historico/:historicoId/editar',
@@ -58,11 +64,14 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          historicoMedicoRepositoryProvider.overrideWithValue(fakeHistoricoRepo),
+          historicoMedicoRepositoryProvider
+              .overrideWithValue(fakeHistoricoRepo),
           anexoRepositoryProvider.overrideWithValue(FakeAnexoRepository()),
-          historicoMedicoProvider.overrideWith((ref, petId) => fakeHistoricoRepo.watchHistorico(petId)),
+          historicoMedicoProvider.overrideWith(
+              (ref, petId) => fakeHistoricoRepo.watchHistorico(petId)),
         ],
-        child: MaterialApp.router(theme: AppTheme.light(), routerConfig: router),
+        child:
+            MaterialApp.router(theme: AppTheme.light(), routerConfig: router),
       ),
     );
     await tester.pumpAndSettle();
@@ -77,7 +86,8 @@ void main() {
 
     final hoje = DateTime.now();
     await _selecionarDia(tester, 0, hoje.day); // data
-    await tester.enterText(find.byType(TextFormField).at(1), 'Consulta de rotina, exame de sangue normal.');
+    await tester.enterText(find.byType(TextFormField).at(1),
+        'Consulta de rotina, exame de sangue normal.');
     await tester.enterText(find.byType(TextFormField).at(2), 'Dra. Ana');
 
     await tester.tap(find.widgetWithText(ElevatedButton, 'SALVAR'));
@@ -91,7 +101,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Editar histórico'), findsOneWidget);
-    await tester.enterText(find.byType(TextFormField).at(1), 'Consulta de retorno, tudo normal.');
+    await tester.enterText(
+        find.byType(TextFormField).at(1), 'Consulta de retorno, tudo normal.');
 
     await tester.tap(find.widgetWithText(ElevatedButton, 'SALVAR'));
     await tester.pumpAndSettle();

@@ -5,7 +5,8 @@ import '../domain/consulta.dart';
 import '../domain/consulta_repository.dart';
 
 class FirebaseConsultaRepository implements ConsultaRepository {
-  FirebaseConsultaRepository({required FirebaseFirestore firestore}) : _firestore = firestore;
+  FirebaseConsultaRepository({required FirebaseFirestore firestore})
+      : _firestore = firestore;
 
   final FirebaseFirestore _firestore;
 
@@ -15,7 +16,9 @@ class FirebaseConsultaRepository implements ConsultaRepository {
   @override
   Stream<List<Consulta>> watchConsultas(String petId) {
     return _consultas(petId).snapshots().map((snapshot) {
-      final consultas = snapshot.docs.map((doc) => Consulta.fromMap(doc.id, doc.data())).toList();
+      final consultas = snapshot.docs
+          .map((doc) => Consulta.fromMap(doc.id, doc.data()))
+          .toList();
       consultas.sort((a, b) {
         final dataA = parseBrDate(a.data);
         final dataB = parseBrDate(b.data);

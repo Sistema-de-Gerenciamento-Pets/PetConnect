@@ -59,13 +59,15 @@ import 'package:http/http.dart' as http;
 import 'package:pet_connect/app.dart';
 import 'package:pet_connect/firebase_options.dart';
 
-const _apiBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8090');
+const _apiBaseUrl = String.fromEnvironment('API_BASE_URL',
+    defaultValue: 'http://localhost:8090');
 
 // 'localhost' funciona rodando `flutter test` direto no host; dentro do
 // container de tool/web-test/Dockerfile (contorno do bug de loopback desta
 // máquina), o Auth Emulator está no HOST, não no container — por isso
 // configurável via --dart-define=AUTH_EMULATOR_HOST=host.docker.internal.
-const _authEmulatorHost = String.fromEnvironment('AUTH_EMULATOR_HOST', defaultValue: 'localhost');
+const _authEmulatorHost =
+    String.fromEnvironment('AUTH_EMULATOR_HOST', defaultValue: 'localhost');
 
 void main() {
   final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -76,7 +78,8 @@ void main() {
 
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform);
     // A partir daqui, todo signIn/signUp/signOut do FirebaseAuth.instance
     // fala com o emulador local — nunca com o projeto real.
     await FirebaseAuth.instance.useAuthEmulator(_authEmulatorHost, 9099);
@@ -109,7 +112,8 @@ void main() {
     await tester.pumpAndSettle(const Duration(seconds: 2));
   }
 
-  testWidgets('cadastro -> home -> logout -> login -> senha errada', (tester) async {
+  testWidgets('cadastro -> home -> logout -> login -> senha errada',
+      (tester) async {
     await tester.pumpWidget(const ProviderScope(child: PetConnectApp()));
     await tester.pumpAndSettle();
 
@@ -118,12 +122,14 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    expect(find.text('Login'), findsOneWidget, reason: 'deveria abrir na tela de login');
+    expect(find.text('Login'), findsOneWidget,
+        reason: 'deveria abrir na tela de login');
 
     await tester.tap(find.text('Cadastre-se'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Crie sua conta'), findsOneWidget, reason: 'deveria navegar para o cadastro');
+    expect(find.text('Crie sua conta'), findsOneWidget,
+        reason: 'deveria navegar para o cadastro');
 
     final cadastroFields = find.byType(TextFormField);
     expect(cadastroFields, findsNWidgets(5));
@@ -136,13 +142,16 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'CRIAR CONTA'));
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
-    expect(find.text('Meus Pets'), findsOneWidget, reason: 'cadastro deveria levar direto para a Home');
+    expect(find.text('Meus Pets'), findsOneWidget,
+        reason: 'cadastro deveria levar direto para a Home');
     expect(find.textContaining('Olá, $testPrimeiroNome'), findsOneWidget,
-        reason: 'Home deveria saudar o usuário recém-cadastrado pelo primeiro nome');
+        reason:
+            'Home deveria saudar o usuário recém-cadastrado pelo primeiro nome');
 
     await logout(tester);
 
-    expect(find.text('Login'), findsOneWidget, reason: 'logout deveria voltar para a tela de login');
+    expect(find.text('Login'), findsOneWidget,
+        reason: 'logout deveria voltar para a tela de login');
 
     final loginFields = find.byType(TextField);
     expect(loginFields, findsNWidgets(2));
@@ -162,8 +171,10 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'ENTRAR'));
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
-    expect(find.text('Login'), findsOneWidget, reason: 'senha errada não deveria navegar para a Home');
+    expect(find.text('Login'), findsOneWidget,
+        reason: 'senha errada não deveria navegar para a Home');
     expect(find.text('E-mail ou senha inválidos.'), findsOneWidget,
-        reason: 'deveria mostrar a mensagem de erro genérica de credenciais inválidas');
+        reason:
+            'deveria mostrar a mensagem de erro genérica de credenciais inválidas');
   });
 }

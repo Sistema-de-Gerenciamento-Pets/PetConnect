@@ -22,11 +22,14 @@ class ConsultaFormScreen extends ConsumerStatefulWidget {
 
 class _ConsultaFormScreenState extends ConsumerState<ConsultaFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final _dataController = TextEditingController(text: widget.consulta?.data ?? '');
-  late final _horarioController = TextEditingController(text: widget.consulta?.horario ?? '');
+  late final _dataController =
+      TextEditingController(text: widget.consulta?.data ?? '');
+  late final _horarioController =
+      TextEditingController(text: widget.consulta?.horario ?? '');
   late final _veterinarioController =
       TextEditingController(text: widget.consulta?.veterinario ?? '');
-  late final _motivoController = TextEditingController(text: widget.consulta?.motivo ?? '');
+  late final _motivoController =
+      TextEditingController(text: widget.consulta?.motivo ?? '');
 
   bool _submitting = false;
   String? _error;
@@ -102,7 +105,8 @@ class _ConsultaFormScreenState extends ConsumerState<ConsultaFormScreen> {
       if (mounted) context.pop();
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Não foi possível salvar a consulta. Tente novamente.');
+        setState(() =>
+            _error = 'Não foi possível salvar a consulta. Tente novamente.');
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -136,10 +140,12 @@ class _ConsultaFormScreenState extends ConsumerState<ConsultaFormScreen> {
                   onTap: _pickData,
                   decoration: const InputDecoration(
                     hintText: 'Data:',
-                    suffixIcon: Icon(Icons.calendar_today, color: AppColors.textMuted),
+                    suffixIcon:
+                        Icon(Icons.calendar_today, color: AppColors.textMuted),
                   ),
-                  validator: (value) =>
-                      (value == null || value.trim().isEmpty) ? 'Informe a data.' : null,
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Informe a data.'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -148,27 +154,33 @@ class _ConsultaFormScreenState extends ConsumerState<ConsultaFormScreen> {
                   onTap: _pickHorario,
                   decoration: const InputDecoration(
                     hintText: 'Horário (opcional):',
-                    suffixIcon: Icon(Icons.access_time, color: AppColors.textMuted),
+                    suffixIcon:
+                        Icon(Icons.access_time, color: AppColors.textMuted),
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _veterinarioController,
-                  decoration: const InputDecoration(hintText: 'Veterinário/clínica:'),
-                  validator: (value) =>
-                      (value == null || value.trim().isEmpty) ? 'Informe o veterinário/clínica.' : null,
+                  decoration:
+                      const InputDecoration(hintText: 'Veterinário/clínica:'),
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Informe o veterinário/clínica.'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _motivoController,
                   maxLines: 3,
                   decoration: const InputDecoration(hintText: 'Motivo:'),
-                  validator: (value) =>
-                      (value == null || value.trim().isEmpty) ? 'Informe o motivo da consulta.' : null,
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Informe o motivo da consulta.'
+                      : null,
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
-                  Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
+                  Text(_error!,
+                      style: const TextStyle(
+                          color: AppColors.error, fontSize: 13)),
                 ],
                 const SizedBox(height: 24),
                 ElevatedButton(

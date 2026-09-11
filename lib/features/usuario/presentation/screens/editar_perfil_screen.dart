@@ -28,8 +28,10 @@ class EditarPerfilScreen extends ConsumerStatefulWidget {
 class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
   final _formKey = GlobalKey<FormState>();
   late final _nomeController = TextEditingController(text: widget.usuario.nome);
-  late final _sobrenomeController = TextEditingController(text: widget.usuario.sobrenome);
-  late final _telefoneController = TextEditingController(text: widget.usuario.telefone);
+  late final _sobrenomeController =
+      TextEditingController(text: widget.usuario.sobrenome);
+  late final _telefoneController =
+      TextEditingController(text: widget.usuario.telefone);
   late final _nascimentoController =
       TextEditingController(text: widget.usuario.dataNascimento);
   late String? _genero =
@@ -63,7 +65,8 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
   }
 
   Future<void> _escolherFoto() async {
-    final arquivo = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
+    final arquivo = await ImagePicker()
+        .pickImage(source: ImageSource.gallery, imageQuality: 85);
     if (arquivo == null) return;
 
     final bytes = await arquivo.readAsBytes();
@@ -78,13 +81,16 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
     });
 
     try {
-      final path = 'usuarios/${widget.usuario.id}/foto-${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final path =
+          'usuarios/${widget.usuario.id}/foto-${DateTime.now().millisecondsSinceEpoch}.jpg';
       final url = await ref
           .read(anexoRepositoryProvider)
           .upload(path: path, bytes: bytes, contentType: 'image/jpeg');
       if (mounted) setState(() => _foto = url);
     } catch (e) {
-      if (mounted) setState(() => _error = describirErroUpload(e, item: 'a foto'));
+      if (mounted) {
+        setState(() => _error = describirErroUpload(e, item: 'a foto'));
+      }
     } finally {
       if (mounted) setState(() => _enviandoFoto = false);
     }
@@ -109,7 +115,9 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
       ref.invalidate(currentUsuarioProvider);
       if (mounted) context.pop();
     } catch (_) {
-      if (mounted) setState(() => _error = 'Não foi possível salvar. Tente novamente.');
+      if (mounted) {
+        setState(() => _error = 'Não foi possível salvar. Tente novamente.');
+      }
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -122,7 +130,8 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: const Text('Editar perfil', style: TextStyle(color: AppColors.textPrimary)),
+        title: const Text('Editar perfil',
+            style: TextStyle(color: AppColors.textPrimary)),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: SafeArea(
@@ -145,8 +154,9 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
                 TextFormField(
                   controller: _nomeController,
                   decoration: const InputDecoration(hintText: 'Nome:'),
-                  validator: (value) =>
-                      (value == null || value.trim().isEmpty) ? 'Informe seu nome.' : null,
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Informe seu nome.'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -166,7 +176,8 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
                   onTap: _pickNascimento,
                   decoration: const InputDecoration(
                     hintText: 'Data de nascimento:',
-                    suffixIcon: Icon(Icons.calendar_today, color: AppColors.textMuted),
+                    suffixIcon:
+                        Icon(Icons.calendar_today, color: AppColors.textMuted),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -180,7 +191,9 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
-                  Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
+                  Text(_error!,
+                      style: const TextStyle(
+                          color: AppColors.error, fontSize: 13)),
                 ],
                 const SizedBox(height: 24),
                 ElevatedButton(

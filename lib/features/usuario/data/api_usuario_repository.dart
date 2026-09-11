@@ -56,7 +56,8 @@ class ApiUsuarioRepository implements UsuarioRepository {
     required String telefone,
     required String dataNascimento,
   }) async {
-    await _auth.createUserWithEmailAndPassword(email: email, password: password);
+    await _auth.createUserWithEmailAndPassword(
+        email: email, password: password);
 
     // 1ª chamada provisiona o documento `users` no MongoDB.
     await _api.get('/me');

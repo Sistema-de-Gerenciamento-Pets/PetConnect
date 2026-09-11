@@ -17,12 +17,14 @@ class LocalizacaoFormScreen extends ConsumerStatefulWidget {
   final String petId;
 
   @override
-  ConsumerState<LocalizacaoFormScreen> createState() => _LocalizacaoFormScreenState();
+  ConsumerState<LocalizacaoFormScreen> createState() =>
+      _LocalizacaoFormScreenState();
 }
 
 class _LocalizacaoFormScreenState extends ConsumerState<LocalizacaoFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _dataController = TextEditingController(text: formatBrDate(DateTime.now()));
+  final _dataController =
+      TextEditingController(text: formatBrDate(DateTime.now()));
   final _descricaoController = TextEditingController();
   final _contatoController = TextEditingController();
 
@@ -71,7 +73,8 @@ class _LocalizacaoFormScreenState extends ConsumerState<LocalizacaoFormScreen> {
       if (mounted) context.pop();
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Não foi possível salvar o registro. Tente novamente.');
+        setState(() =>
+            _error = 'Não foi possível salvar o registro. Tente novamente.');
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -85,7 +88,8 @@ class _LocalizacaoFormScreenState extends ConsumerState<LocalizacaoFormScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: const Text('Registrar avistamento', style: TextStyle(color: AppColors.textPrimary)),
+        title: const Text('Registrar avistamento',
+            style: TextStyle(color: AppColors.textPrimary)),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: SafeArea(
@@ -102,29 +106,36 @@ class _LocalizacaoFormScreenState extends ConsumerState<LocalizacaoFormScreen> {
                   onTap: _pickData,
                   decoration: const InputDecoration(
                     hintText: 'Data:',
-                    suffixIcon: Icon(Icons.calendar_today, color: AppColors.textMuted),
+                    suffixIcon:
+                        Icon(Icons.calendar_today, color: AppColors.textMuted),
                   ),
-                  validator: (value) =>
-                      (value == null || value.trim().isEmpty) ? 'Informe a data.' : null,
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Informe a data.'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _descricaoController,
                   maxLines: 3,
                   decoration: const InputDecoration(
-                    hintText: 'Onde/como o pet foi visto (ex: Rua X, perto do mercado):',
+                    hintText:
+                        'Onde/como o pet foi visto (ex: Rua X, perto do mercado):',
                   ),
-                  validator: (value) =>
-                      (value == null || value.trim().isEmpty) ? 'Descreva o local.' : null,
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Descreva o local.'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _contatoController,
-                  decoration: const InputDecoration(hintText: 'Contato de quem viu (opcional):'),
+                  decoration: const InputDecoration(
+                      hintText: 'Contato de quem viu (opcional):'),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
-                  Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
+                  Text(_error!,
+                      style: const TextStyle(
+                          color: AppColors.error, fontSize: 13)),
                 ],
                 const SizedBox(height: 24),
                 ElevatedButton(

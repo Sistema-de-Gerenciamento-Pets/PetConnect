@@ -31,7 +31,8 @@ class AvatarPicker extends StatelessWidget {
             backgroundColor: AppColors.surface,
             backgroundImage: fotoUrl != null ? NetworkImage(fotoUrl!) : null,
             child: fotoUrl == null
-                ? Icon(placeholderIcon, size: radius * 0.85, color: AppColors.brandMedium)
+                ? Icon(placeholderIcon,
+                    size: radius * 0.85, color: AppColors.brandMedium)
                 : null,
           ),
           if (enviando)
@@ -41,7 +42,8 @@ class AvatarPicker extends StatelessWidget {
                 child: SizedBox(
                   width: radius * 0.6,
                   height: radius * 0.6,
-                  child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  child: const CircularProgressIndicator(
+                      color: Colors.white, strokeWidth: 2),
                 ),
               ),
             )
@@ -52,7 +54,8 @@ class AvatarPicker extends StatelessWidget {
               child: CircleAvatar(
                 radius: radius * 0.32,
                 backgroundColor: AppColors.brandDark,
-                child: Icon(Icons.camera_alt, size: radius * 0.32, color: AppColors.textOnBrand),
+                child: Icon(Icons.camera_alt,
+                    size: radius * 0.32, color: AppColors.textOnBrand),
               ),
             ),
         ],

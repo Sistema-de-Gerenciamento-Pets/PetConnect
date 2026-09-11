@@ -33,7 +33,8 @@ class Usuario {
   final String? foto;
 
   /// Nome completo (nome + sobrenome), usado em saudações/exibição.
-  String get nomeCompleto => [nome, sobrenome].where((s) => s.isNotEmpty).join(' ');
+  String get nomeCompleto =>
+      [nome, sobrenome].where((s) => s.isNotEmpty).join(' ');
 
   factory Usuario.fromMap(String id, Map<String, dynamic> map) {
     return Usuario(

@@ -20,12 +20,14 @@ class PetDetailScreen extends ConsumerWidget {
 
   final String petId;
 
-  Future<void> _confirmarExclusao(BuildContext context, WidgetRef ref, Pet pet) async {
+  Future<void> _confirmarExclusao(
+      BuildContext context, WidgetRef ref, Pet pet) async {
     final confirmou = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Excluir pet'),
-        content: Text('Tem certeza que deseja excluir ${pet.nome}? Esta ação não pode ser desfeita.'),
+        content: Text(
+            'Tem certeza que deseja excluir ${pet.nome}? Esta ação não pode ser desfeita.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -33,7 +35,8 @@ class PetDetailScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Excluir', style: TextStyle(color: AppColors.error)),
+            child:
+                const Text('Excluir', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -62,7 +65,8 @@ class PetDetailScreen extends ConsumerWidget {
         child: petAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => const Center(
-            child: Text('Não foi possível carregar este pet.', style: TextStyle(color: AppColors.error)),
+            child: Text('Não foi possível carregar este pet.',
+                style: TextStyle(color: AppColors.error)),
           ),
           data: (pet) {
             if (pet == null || pet.userId != uid) {
@@ -86,9 +90,11 @@ class PetDetailScreen extends ConsumerWidget {
                     child: CircleAvatar(
                       radius: 56,
                       backgroundColor: AppColors.surface,
-                      backgroundImage: pet.foto != null ? NetworkImage(pet.foto!) : null,
+                      backgroundImage:
+                          pet.foto != null ? NetworkImage(pet.foto!) : null,
                       child: pet.foto == null
-                          ? const Icon(Icons.pets, size: 48, color: AppColors.brandMedium)
+                          ? const Icon(Icons.pets,
+                              size: 48, color: AppColors.brandMedium)
                           : null,
                     ),
                   ),
@@ -109,7 +115,8 @@ class PetDetailScreen extends ConsumerWidget {
                   _InfoTile(label: 'Gênero', value: pet.genero),
                   _InfoTile(label: 'Porte', value: pet.porte),
                   _InfoTile(label: 'Peso', value: pet.peso),
-                  _InfoTile(label: 'Data de nascimento', value: pet.dataNascimento),
+                  _InfoTile(
+                      label: 'Data de nascimento', value: pet.dataNascimento),
                   _InfoTile(
                     label: 'Vacinado',
                     value: pet.vacinado ? 'Sim' : 'Não',
@@ -122,28 +129,35 @@ class PetDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     onPressed: () => context.push('/pet/${pet.id}/historico'),
-                    icon: const Icon(Icons.medical_information_outlined, color: AppColors.textPrimary),
-                    label: const Text('HISTÓRICO MÉDICO', style: TextStyle(color: AppColors.textPrimary)),
+                    icon: const Icon(Icons.medical_information_outlined,
+                        color: AppColors.textPrimary),
+                    label: const Text('HISTÓRICO MÉDICO',
+                        style: TextStyle(color: AppColors.textPrimary)),
                   ),
                   const SizedBox(height: 12),
                   _ConsultaButton(petId: pet.id),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     onPressed: () => context.push('/pet/${pet.id}/localizacao'),
-                    icon: const Icon(Icons.location_on_outlined, color: AppColors.textPrimary),
-                    label: const Text('LOCALIZAÇÃO', style: TextStyle(color: AppColors.textPrimary)),
+                    icon: const Icon(Icons.location_on_outlined,
+                        color: AppColors.textPrimary),
+                    label: const Text('LOCALIZAÇÃO',
+                        style: TextStyle(color: AppColors.textPrimary)),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
-                    onPressed: () => context.push('/pet/${pet.id}/editar', extra: pet),
+                    onPressed: () =>
+                        context.push('/pet/${pet.id}/editar', extra: pet),
                     icon: const Icon(Icons.edit),
                     label: const Text('EDITAR'),
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     onPressed: () => _confirmarExclusao(context, ref, pet),
-                    icon: const Icon(Icons.delete_outline, color: AppColors.error),
-                    label: const Text('EXCLUIR', style: TextStyle(color: AppColors.error)),
+                    icon: const Icon(Icons.delete_outline,
+                        color: AppColors.error),
+                    label: const Text('EXCLUIR',
+                        style: TextStyle(color: AppColors.error)),
                   ),
                 ],
               ),
@@ -177,7 +191,8 @@ class _VacinaButton extends ConsumerWidget {
       ),
       label: Text(
         temAlerta ? 'CARTEIRA DE VACINA — DOSE PENDENTE' : 'CARTEIRA DE VACINA',
-        style: TextStyle(color: temAlerta ? AppColors.error : AppColors.textPrimary),
+        style: TextStyle(
+            color: temAlerta ? AppColors.error : AppColors.textPrimary),
       ),
     );
   }
@@ -193,18 +208,22 @@ class _ConsultaButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final consultasAsync = ref.watch(consultasProvider(petId));
-    final temAlerta =
-        consultasAsync.valueOrNull?.any((consulta) => consultaEstaProxima(consulta)) ?? false;
+    final temAlerta = consultasAsync.valueOrNull
+            ?.any((consulta) => consultaEstaProxima(consulta)) ??
+        false;
 
     return OutlinedButton.icon(
       onPressed: () => context.push('/pet/$petId/consultas'),
       icon: Icon(
-        temAlerta ? Icons.warning_amber_rounded : Icons.event_available_outlined,
+        temAlerta
+            ? Icons.warning_amber_rounded
+            : Icons.event_available_outlined,
         color: temAlerta ? AppColors.error : AppColors.textPrimary,
       ),
       label: Text(
         temAlerta ? 'CONSULTAS — PRÓXIMA MARCADA' : 'CONSULTAS',
-        style: TextStyle(color: temAlerta ? AppColors.error : AppColors.textPrimary),
+        style: TextStyle(
+            color: temAlerta ? AppColors.error : AppColors.textPrimary),
       ),
     );
   }
@@ -225,7 +244,8 @@ class _InfoTile extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(label, style: const TextStyle(color: AppColors.textMuted)),
+            child:
+                Text(label, style: const TextStyle(color: AppColors.textMuted)),
           ),
           Text(
             value,

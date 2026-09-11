@@ -31,7 +31,8 @@ class ApiConsultaRepository implements ConsultaRepository {
   String _base(String petId) => '/pets/$petId/appointments';
 
   @override
-  Stream<List<Consulta>> watchConsultas(String petId) => Stream.fromFuture(_list(petId));
+  Stream<List<Consulta>> watchConsultas(String petId) =>
+      Stream.fromFuture(_list(petId));
 
   Future<List<Consulta>> _list(String petId) async {
     final res = await _api.get(_base(petId));
@@ -82,6 +83,8 @@ class ApiConsultaRepository implements ConsultaRepository {
   /// `HH:mm:ss` (da API) → `HH:mm`. `null` → `null`.
   static String? _horaDaApi(String? scheduledTime) {
     if (scheduledTime == null || scheduledTime.isEmpty) return null;
-    return scheduledTime.length >= 5 ? scheduledTime.substring(0, 5) : scheduledTime;
+    return scheduledTime.length >= 5
+        ? scheduledTime.substring(0, 5)
+        : scheduledTime;
   }
 }

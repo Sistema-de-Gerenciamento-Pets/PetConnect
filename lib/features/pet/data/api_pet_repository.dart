@@ -28,13 +28,29 @@ class ApiPetRepository implements PetRepository {
     'gato': 'CAT',
     'gata': 'CAT',
   };
-  static const _especieDaApi = {'DOG': 'Cachorro', 'CAT': 'Gato', 'OTHER': 'Outro'};
+  static const _especieDaApi = {
+    'DOG': 'Cachorro',
+    'CAT': 'Gato',
+    'OTHER': 'Outro'
+  };
 
   static const _generoParaApi = {'Macho': 'MALE', 'Fêmea': 'FEMALE'};
-  static const _generoDaApi = {'MALE': 'Macho', 'FEMALE': 'Fêmea', 'UNKNOWN': ''};
+  static const _generoDaApi = {
+    'MALE': 'Macho',
+    'FEMALE': 'Fêmea',
+    'UNKNOWN': ''
+  };
 
-  static const _porteParaApi = {'Pequeno': 'SMALL', 'Médio': 'MEDIUM', 'Grande': 'LARGE'};
-  static const _porteDaApi = {'SMALL': 'Pequeno', 'MEDIUM': 'Médio', 'LARGE': 'Grande'};
+  static const _porteParaApi = {
+    'Pequeno': 'SMALL',
+    'Médio': 'MEDIUM',
+    'Grande': 'LARGE'
+  };
+  static const _porteDaApi = {
+    'SMALL': 'Pequeno',
+    'MEDIUM': 'Médio',
+    'LARGE': 'Grande'
+  };
 
   @override
   Stream<List<Pet>> watchPets(String userId) => Stream.fromFuture(_listPets());
@@ -42,10 +58,7 @@ class ApiPetRepository implements PetRepository {
   Future<List<Pet>> _listPets() async {
     final res = await _api.get('/pets');
     final list = (res['data'] as List?) ?? const [];
-    final pets = list
-        .cast<Map<String, dynamic>>()
-        .map(_petFromApi)
-        .toList()
+    final pets = list.cast<Map<String, dynamic>>().map(_petFromApi).toList()
       ..sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
     return pets;
   }
@@ -119,7 +132,8 @@ class ApiPetRepository implements PetRepository {
   }
 
   static double? _pesoParaKg(String peso) {
-    final match = RegExp(r'-?\d+(?:[.,]\d+)?').firstMatch(peso.replaceAll(',', '.'));
+    final match =
+        RegExp(r'-?\d+(?:[.,]\d+)?').firstMatch(peso.replaceAll(',', '.'));
     if (match == null) return null;
     final v = double.tryParse(match.group(0)!);
     return (v != null && v > 0) ? v : null;

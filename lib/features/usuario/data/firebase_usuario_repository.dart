@@ -95,7 +95,10 @@ class FirebaseUsuarioRepository implements UsuarioRepository {
     final user = _auth.currentUser!;
     final uid = user.uid;
 
-    final pets = await _firestore.collection('Pets').where('userId', isEqualTo: uid).get();
+    final pets = await _firestore
+        .collection('Pets')
+        .where('userId', isEqualTo: uid)
+        .get();
     for (final pet in pets.docs) {
       await _deleteSubcollection(pet.reference.collection('vacinas'));
       await _deleteSubcollection(pet.reference.collection('historicoMedico'));
@@ -106,7 +109,8 @@ class FirebaseUsuarioRepository implements UsuarioRepository {
     await user.delete();
   }
 
-  Future<void> _deleteSubcollection(CollectionReference<Map<String, dynamic>> collection) async {
+  Future<void> _deleteSubcollection(
+      CollectionReference<Map<String, dynamic>> collection) async {
     final docs = await collection.get();
     for (final doc in docs.docs) {
       await doc.reference.delete();

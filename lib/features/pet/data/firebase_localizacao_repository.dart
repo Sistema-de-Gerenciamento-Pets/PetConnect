@@ -5,7 +5,8 @@ import '../domain/localizacao.dart';
 import '../domain/localizacao_repository.dart';
 
 class FirebaseLocalizacaoRepository implements LocalizacaoRepository {
-  FirebaseLocalizacaoRepository({required FirebaseFirestore firestore}) : _firestore = firestore;
+  FirebaseLocalizacaoRepository({required FirebaseFirestore firestore})
+      : _firestore = firestore;
 
   final FirebaseFirestore _firestore;
 
@@ -15,8 +16,9 @@ class FirebaseLocalizacaoRepository implements LocalizacaoRepository {
   @override
   Stream<List<Localizacao>> watchLocalizacoes(String petId) {
     return _localizacoes(petId).snapshots().map((snapshot) {
-      final localizacoes =
-          snapshot.docs.map((doc) => Localizacao.fromMap(doc.id, doc.data())).toList();
+      final localizacoes = snapshot.docs
+          .map((doc) => Localizacao.fromMap(doc.id, doc.data()))
+          .toList();
       localizacoes.sort((a, b) {
         final dataA = parseBrDate(a.data);
         final dataB = parseBrDate(b.data);

@@ -7,11 +7,13 @@ import '../../data/firebase_historico_medico_repository.dart';
 import '../../domain/historico_medico.dart';
 import '../../domain/historico_medico_repository.dart';
 
-final historicoMedicoRepositoryProvider = Provider<HistoricoMedicoRepository>((ref) {
+final historicoMedicoRepositoryProvider =
+    Provider<HistoricoMedicoRepository>((ref) {
   if (AppConfig.useApiForHistorico) {
     return ApiHistoricoMedicoRepository(api: ref.watch(apiClientProvider));
   }
-  return FirebaseHistoricoMedicoRepository(firestore: ref.watch(firestoreProvider));
+  return FirebaseHistoricoMedicoRepository(
+      firestore: ref.watch(firestoreProvider));
 });
 
 /// Histórico médico de um pet (RF25). `family` porque cada perfil de pet
@@ -21,6 +23,7 @@ final historicoMedicoRepositoryProvider = Provider<HistoricoMedicoRepository>((r
 /// `GET /api/v1/pets/{petId}/medical-records` (emissão única); as telas
 /// chamam `ref.invalidate(historicoMedicoProvider(petId))` após mutações e a
 /// lista tem pull-to-refresh.
-final historicoMedicoProvider = StreamProvider.family<List<HistoricoMedico>, String>((ref, petId) {
+final historicoMedicoProvider =
+    StreamProvider.family<List<HistoricoMedico>, String>((ref, petId) {
   return ref.watch(historicoMedicoRepositoryProvider).watchHistorico(petId);
 });

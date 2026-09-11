@@ -3,7 +3,11 @@ import 'package:pet_connect/features/pet/domain/vacina.dart';
 import 'package:pet_connect/features/pet/domain/vacina_alerta.dart';
 
 Vacina _vacina({String? proximaDose}) {
-  return Vacina(id: 'v1', nome: 'V10', dataAplicacao: '01/01/2024', proximaDose: proximaDose);
+  return Vacina(
+      id: 'v1',
+      nome: 'V10',
+      dataAplicacao: '01/01/2024',
+      proximaDose: proximaDose);
 }
 
 void main() {

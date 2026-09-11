@@ -8,7 +8,8 @@ import 'package:pet_connect/core/network/api_client.dart';
 import 'package:pet_connect/features/pet/data/api_anexo_repository.dart';
 
 void main() {
-  test('upload pega a assinatura na API e sobe direto pro Cloudinary assinado', () async {
+  test('upload pega a assinatura na API e sobe direto pro Cloudinary assinado',
+      () async {
     final requests = <http.BaseRequest>[];
 
     final api = ApiClient(
@@ -17,7 +18,12 @@ void main() {
       httpClient: MockClient((req) async {
         requests.add(req);
         return http.Response(
-          jsonEncode({'signature': 'sig123', 'timestamp': 1700000000, 'apiKey': 'key1', 'cloudName': 'cloudx'}),
+          jsonEncode({
+            'signature': 'sig123',
+            'timestamp': 1700000000,
+            'apiKey': 'key1',
+            'cloudName': 'cloudx'
+          }),
           200,
           headers: {'content-type': 'application/json'},
         );
@@ -27,7 +33,12 @@ void main() {
     final cloudinaryRequests = <http.BaseRequest>[];
     final uploadHttp = MockClient((req) async {
       cloudinaryRequests.add(req);
-      return http.Response(jsonEncode({'secure_url': 'https://res.cloudinary.com/cloudx/image/upload/v1/abc.jpg'}), 200);
+      return http.Response(
+          jsonEncode({
+            'secure_url':
+                'https://res.cloudinary.com/cloudx/image/upload/v1/abc.jpg'
+          }),
+          200);
     });
 
     final repo = ApiAnexoRepository(api: api, httpClient: uploadHttp);
@@ -44,8 +55,10 @@ void main() {
     // MockClient entrega um http.Request reconstruído (não o MultipartRequest
     // original) — inspeciona o corpo multipart já codificado.
     final cloudinaryReq = cloudinaryRequests.single as http.Request;
-    expect(cloudinaryReq.url.toString(), 'https://api.cloudinary.com/v1_1/cloudx/auto/upload');
-    expect(cloudinaryReq.headers['content-type'], contains('multipart/form-data'));
+    expect(cloudinaryReq.url.toString(),
+        'https://api.cloudinary.com/v1_1/cloudx/auto/upload');
+    expect(
+        cloudinaryReq.headers['content-type'], contains('multipart/form-data'));
     final body = cloudinaryReq.body;
     expect(body, contains('name="api_key"'));
     expect(body, contains('key1'));
@@ -68,10 +81,12 @@ void main() {
     );
 
     final repo = ApiAnexoRepository(api: api);
-    await repo.delete('https://res.cloudinary.com/cloudx/image/upload/v1/abc.jpg');
+    await repo
+        .delete('https://res.cloudinary.com/cloudx/image/upload/v1/abc.jpg');
 
     expect(captured!.method, 'DELETE');
     expect(captured!.url.path, '/api/v1/uploads');
-    expect(jsonDecode(captured!.body), {'url': 'https://res.cloudinary.com/cloudx/image/upload/v1/abc.jpg'});
+    expect(jsonDecode(captured!.body),
+        {'url': 'https://res.cloudinary.com/cloudx/image/upload/v1/abc.jpg'});
   });
 }

@@ -27,16 +27,20 @@ class LocalizacaoTile extends StatelessWidget {
               children: [
                 Text(
                   localizacao.data,
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 4),
-                Text(localizacao.descricao, style: const TextStyle(color: AppColors.textPrimary)),
+                Text(localizacao.descricao,
+                    style: const TextStyle(color: AppColors.textPrimary)),
                 if (localizacao.contatoReportante != null &&
                     localizacao.contatoReportante!.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
                     'Contato: ${localizacao.contatoReportante}',
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                    style: const TextStyle(
+                        color: AppColors.textMuted, fontSize: 12),
                   ),
                 ],
               ],

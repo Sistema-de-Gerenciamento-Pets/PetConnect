@@ -21,7 +21,8 @@ class LocalizacaoListScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: const Text('Localização', style: TextStyle(color: AppColors.textPrimary)),
+        title: const Text('Localização',
+            style: TextStyle(color: AppColors.textPrimary)),
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       floatingActionButton: FloatingActionButton(
@@ -34,7 +35,8 @@ class LocalizacaoListScreen extends ConsumerWidget {
         child: localizacoesAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => const Center(
-            child: Text('Não foi possível carregar os registros.', style: TextStyle(color: AppColors.error)),
+            child: Text('Não foi possível carregar os registros.',
+                style: TextStyle(color: AppColors.error)),
           ),
           data: (localizacoes) {
             Future<void> atualizar() async {
@@ -69,7 +71,8 @@ class LocalizacaoListScreen extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 96),
                 itemCount: localizacoes.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) => LocalizacaoTile(localizacao: localizacoes[index]),
+                itemBuilder: (context, index) =>
+                    LocalizacaoTile(localizacao: localizacoes[index]),
               ),
             );
           },

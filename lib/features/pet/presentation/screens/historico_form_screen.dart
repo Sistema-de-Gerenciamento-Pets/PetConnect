@@ -24,18 +24,21 @@ class HistoricoFormScreen extends ConsumerStatefulWidget {
   bool get isEditing => historico != null;
 
   @override
-  ConsumerState<HistoricoFormScreen> createState() => _HistoricoFormScreenState();
+  ConsumerState<HistoricoFormScreen> createState() =>
+      _HistoricoFormScreenState();
 }
 
 class _HistoricoFormScreenState extends ConsumerState<HistoricoFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final _dataController = TextEditingController(text: widget.historico?.data ?? '');
-  late final _descricaoController = TextEditingController(text: widget.historico?.descricao ?? '');
+  late final _dataController =
+      TextEditingController(text: widget.historico?.data ?? '');
+  late final _descricaoController =
+      TextEditingController(text: widget.historico?.descricao ?? '');
   late final _veterinarioController =
       TextEditingController(text: widget.historico?.veterinario ?? '');
 
-  late final String _registroId =
-      widget.historico?.id ?? ref.read(historicoMedicoRepositoryProvider).novoId(widget.petId);
+  late final String _registroId = widget.historico?.id ??
+      ref.read(historicoMedicoRepositoryProvider).novoId(widget.petId);
   late List<String> _anexos = List.of(widget.historico?.anexos ?? const []);
 
   bool _enviandoAnexo = false;
@@ -64,7 +67,8 @@ class _HistoricoFormScreenState extends ConsumerState<HistoricoFormScreen> {
   }
 
   Future<void> _adicionarAnexo() async {
-    final arquivo = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
+    final arquivo = await ImagePicker()
+        .pickImage(source: ImageSource.gallery, imageQuality: 85);
     if (arquivo == null) return;
 
     final bytes = await arquivo.readAsBytes();
@@ -88,7 +92,9 @@ class _HistoricoFormScreenState extends ConsumerState<HistoricoFormScreen> {
           );
       if (mounted) setState(() => _anexos = [..._anexos, url]);
     } catch (e) {
-      if (mounted) setState(() => _error = describirErroUpload(e, item: 'o anexo'));
+      if (mounted) {
+        setState(() => _error = describirErroUpload(e, item: 'o anexo'));
+      }
     } finally {
       if (mounted) setState(() => _enviandoAnexo = false);
     }
@@ -131,7 +137,8 @@ class _HistoricoFormScreenState extends ConsumerState<HistoricoFormScreen> {
       if (mounted) context.pop();
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Não foi possível salvar o histórico. Tente novamente.');
+        setState(() =>
+            _error = 'Não foi possível salvar o histórico. Tente novamente.');
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -165,41 +172,52 @@ class _HistoricoFormScreenState extends ConsumerState<HistoricoFormScreen> {
                   onTap: _pickData,
                   decoration: const InputDecoration(
                     hintText: 'Data:',
-                    suffixIcon: Icon(Icons.calendar_today, color: AppColors.textMuted),
+                    suffixIcon:
+                        Icon(Icons.calendar_today, color: AppColors.textMuted),
                   ),
-                  validator: (value) =>
-                      (value == null || value.trim().isEmpty) ? 'Informe a data.' : null,
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Informe a data.'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _descricaoController,
                   maxLines: 4,
                   decoration: const InputDecoration(hintText: 'Descrição:'),
-                  validator: (value) =>
-                      (value == null || value.trim().isEmpty) ? 'Informe uma descrição.' : null,
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Informe uma descrição.'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _veterinarioController,
-                  decoration: const InputDecoration(hintText: 'Veterinário/clínica (opcional):'),
+                  decoration: const InputDecoration(
+                      hintText: 'Veterinário/clínica (opcional):'),
                 ),
                 const SizedBox(height: 24),
                 const Text(
                   'Anexos (exames, fotos)',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 12,
                   runSpacing: 12,
                   children: [
-                    for (final anexo in _anexos) _AnexoThumbnail(url: anexo, onRemover: () => _removerAnexo(anexo)),
-                    _AdicionarAnexoButton(enviando: _enviandoAnexo, onTap: _adicionarAnexo),
+                    for (final anexo in _anexos)
+                      _AnexoThumbnail(
+                          url: anexo, onRemover: () => _removerAnexo(anexo)),
+                    _AdicionarAnexoButton(
+                        enviando: _enviandoAnexo, onTap: _adicionarAnexo),
                   ],
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
-                  Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
+                  Text(_error!,
+                      style: const TextStyle(
+                          color: AppColors.error, fontSize: 13)),
                 ],
                 const SizedBox(height: 24),
                 ElevatedButton(
@@ -279,7 +297,8 @@ class _AdicionarAnexoButton extends StatelessWidget {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               )
-            : const Icon(Icons.add_a_photo_outlined, color: AppColors.textMuted),
+            : const Icon(Icons.add_a_photo_outlined,
+                color: AppColors.textMuted),
       ),
     );
   }

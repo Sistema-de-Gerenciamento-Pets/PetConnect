@@ -26,10 +26,14 @@ void main() {
     final router = GoRouter(
       initialLocation: '/',
       routes: [
-        GoRoute(path: '/', builder: (context, state) => const ConsultaListScreen(petId: _petId)),
+        GoRoute(
+            path: '/',
+            builder: (context, state) =>
+                const ConsultaListScreen(petId: _petId)),
         GoRoute(
           path: '/pet/:id/consultas/nova',
-          builder: (context, state) => ConsultaFormScreen(petId: state.pathParameters['id']!),
+          builder: (context, state) =>
+              ConsultaFormScreen(petId: state.pathParameters['id']!),
         ),
         GoRoute(
           path: '/pet/:id/consultas/:consultaId/editar',
@@ -45,9 +49,11 @@ void main() {
       ProviderScope(
         overrides: [
           consultaRepositoryProvider.overrideWithValue(fakeRepo),
-          consultasProvider.overrideWith((ref, petId) => fakeRepo.watchConsultas(petId)),
+          consultasProvider
+              .overrideWith((ref, petId) => fakeRepo.watchConsultas(petId)),
         ],
-        child: MaterialApp.router(theme: AppTheme.light(), routerConfig: router),
+        child:
+            MaterialApp.router(theme: AppTheme.light(), routerConfig: router),
       ),
     );
     await tester.pumpAndSettle();
@@ -89,7 +95,9 @@ void main() {
     await tester.tap(find.widgetWithText(TextButton, 'Cancelar'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Canceladas'), findsOneWidget, reason: 'deveria mover para a seção de canceladas');
-    expect(find.text('Futuras'), findsNothing, reason: 'não deveria mais contar como pendente');
+    expect(find.text('Canceladas'), findsOneWidget,
+        reason: 'deveria mover para a seção de canceladas');
+    expect(find.text('Futuras'), findsNothing,
+        reason: 'não deveria mais contar como pendente');
   });
 }

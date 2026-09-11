@@ -5,7 +5,8 @@ import '../domain/historico_medico.dart';
 import '../domain/historico_medico_repository.dart';
 
 class FirebaseHistoricoMedicoRepository implements HistoricoMedicoRepository {
-  FirebaseHistoricoMedicoRepository({required FirebaseFirestore firestore}) : _firestore = firestore;
+  FirebaseHistoricoMedicoRepository({required FirebaseFirestore firestore})
+      : _firestore = firestore;
 
   final FirebaseFirestore _firestore;
 
@@ -18,8 +19,9 @@ class FirebaseHistoricoMedicoRepository implements HistoricoMedicoRepository {
   @override
   Stream<List<HistoricoMedico>> watchHistorico(String petId) {
     return _historico(petId).snapshots().map((snapshot) {
-      final registros =
-          snapshot.docs.map((doc) => HistoricoMedico.fromMap(doc.id, doc.data())).toList();
+      final registros = snapshot.docs
+          .map((doc) => HistoricoMedico.fromMap(doc.id, doc.data()))
+          .toList();
       registros.sort((a, b) {
         final dataA = parseBrDate(a.data);
         final dataB = parseBrDate(b.data);
