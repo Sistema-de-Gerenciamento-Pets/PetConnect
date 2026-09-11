@@ -1,9 +1,28 @@
-# Firestore Security Rules — deployadas hoje (R-02)
+# Firestore Security Rules — histórico (R-02)
 
-> Coladas pelo usuário do console em 2026-09-10. Projeto `pet-connect-c53f1`.
-> Registradas aqui porque **não existem no repositório** (`firebase.json` não referencia `firestore.rules`).
+> Projeto `pet-connect-c53f1`. A partir de 2026-09-11 as regras **vivem em
+> `firestore.rules`** na raiz do repo (referenciado por `firebase.json`) —
+> este arquivo passa a ser só o histórico/análise, não a fonte da verdade.
 
-## Conteúdo atual
+## ✅ 2026-09-11 — FASE 11, passo 1: leitura/escrita anônima fechada
+
+Deploy feito (`firebase deploy --only firestore:rules`) e **verificado**:
+`GET Pets`/`Localizacoes` sem token → `403 PERMISSION_DENIED` (antes: 200,
+aberto); com um ID Token real → `200` continua normal (não quebrou nada que
+já exigia login). Nada que já dependia de `request.auth != null` mudou de
+comportamento — só o acesso **sem login nenhum** deixou de funcionar.
+
+Confirmado com o usuário antes do deploy: não existe mais nenhum fluxo
+público real (página/Cloud Function) escrevendo em `Localizacoes` — os 95
+registros eram só histórico de scans de QR de uma versão antiga, já
+migrados pro MongoDB. Por isso a escrita pública dessa coleção também foi
+fechada, não só a leitura (rollback: `git revert` no commit que mudou
+`firestore.rules` + re-deploy).
+
+O texto exato de antes e depois está no histórico do git de `firestore.rules`
+(e reproduzido nas seções abaixo, para quem não tiver acesso ao repo).
+
+## Conteúdo anterior ao endurecimento (deployado até 2026-09-11)
 
 ```
 rules_version = '2';
@@ -45,10 +64,10 @@ service cloud.firestore {
 | `Usuarios` create/update/delete → `... == data.uid` | Só o doc da "Gabrielly" tem campo `uid`. Nos outros 17, `resource.data.uid` é `undefined` → condição falsa → **update/delete negados**. Perfis antigos provavelmente só eram alterados por caminho administrativo/versão antiga. | 🟡 Inconsistência (fail-closed) |
 | `Pets` update/delete → `... == resource.data.userId` | Correto para os docs que têm `userId` (23 de 24). O pet com `userID` (maiúsculo) fica sem dono válido. | 🟡 |
 
-## Recomendação
+## Recomendação (situação após o passo 1)
 
-1. **Não endurecer agora de forma agressiva** — os 18 usuários reais ainda usam o app (versão antiga + a nova lê o mesmo banco). Mudança brusca quebra o app antigo.
-2. **Endurecimento de baixo risco possível já:** trocar o catch-all `allow read;` por `allow read: if request.auth != null;` (remove a leitura anônima de `Usuarios`). Só a página pública do QR precisa de leitura anônima de pet — e isso passará a ser um endpoint do Spring (FASE 9), não o Firestore.
-3. **`Localizacoes` `write: if true`** deve virar `if false` assim que o app antigo parar de escrever lá (a nova gravação de avistamento vai para a API). Confirmar se algo ainda escreve.
-4. **Endurecimento final (FASE 11):** após FASES 3–5 validadas, `allow read, write: if false` nas coleções já migradas; manter só o essencial para o app antigo até a FASE 13.
-5. Versionar as regras: criar `firestore.rules` no repo e referenciar em `firebase.json`, para nunca mais o conteúdo real ficar só no console.
+1. ~~Endurecimento de baixo risco~~ ✅ feito em 2026-09-11 (catch-all + `Pets` + `Localizacoes` exigem login agora).
+2. ~~Versionar as regras~~ ✅ `firestore.rules` no repo, referenciado em `firebase.json`.
+3. **Próximo passo (ainda não feito):** `Localizacoes` → `write: if false` de vez (hoje só exige login; como não há mais uso real, pode ir direto pra bloqueado). Avaliar junto com o restante do endurecimento final.
+4. **Endurecimento final (resto da FASE 11):** após uso real nas FASES 4–10 validado (não só e2e), `allow read, write: if false` nas coleções que já têm equivalente 100% funcional na API (`Usuarios`, `Pets`); manter só o essencial pro app antigo até a FASE 13.
+5. Rate limiting/CORS/headers de segurança no backend — ainda não feito (fora do escopo do Firestore, mas parte do objetivo original da FASE 11).

@@ -1,7 +1,7 @@
 # Handoff — estado da migração e próximos passos
 
 > Documento vivo para retomar o trabalho (por mim numa próxima sessão ou por outra pessoa).
-> Atualizado em 2026-09-11, ao final da FASE 10 (código pronto; falta a credencial real do Cloudinary pra fechar de vez).
+> Atualizado em 2026-09-11, no meio da FASE 11 (passo 1 deployado e verificado em produção).
 
 ---
 
@@ -20,8 +20,8 @@
 | 8 — Feature **Histórico Médico** | ✅ verificada e2e (flag `USE_API_HISTORICO`) |
 | 9 — QR + página pública | ✅ **parcial** — API pública ok (flag `USE_API_LOCALIZACAO` no lado autenticado); página web + URL real do QR pendentes de hospedagem (usuário: "só local por enquanto") |
 | 10 — Upload assinado (Cloudinary) | ✅ **código pronto e testado** (flag `USE_API_UPLOAD`); round-trip real pendente da API Secret do usuário |
-| **11 — Endurecer Firestore Rules** | ⏭️ **próxima** |
-| 12–13 | pendentes (ver seção 7) |
+| **11 — Endurecer Firestore Rules** | 🚧 **em andamento** — passo 1 deployado e verificado (ver seção 5) |
+| 12–13 | pendentes (ver seção 6) |
 
 Todas as flags default **off** — sem `--dart-define`, o app roda 100% Firebase, como sempre.
 
@@ -123,38 +123,45 @@ temporariamente e apagar depois).
 
 ---
 
-## 5. FASE 11 — Endurecer Firestore Rules (passo a passo)
+## 5. FASE 11 — Endurecer Firestore Rules (em andamento)
 
-Diferente das fases anteriores, esta mexe no **Firestore**, não no backend novo — e é a fase
-onde o risco de quebrar o app antigo (que os 18 usuários reais ainda usam) é real.
+Diferente das fases anteriores, esta mexe no **Firestore**, não no backend novo — é a fase
+onde o risco de quebrar o app antigo (que os 18 usuários reais ainda usam) é real. Por isso:
+antes de cada mudança, parei e confirmei com o usuário; depois de deployar, verifiquei via
+REST (anônimo vs. autenticado) em vez de só confiar que "deve ter funcionado".
 
-### 5.1 O que está deployado hoje
-Ver `docs/security/firestore-rules-deployed.md`. Resumo: catch-all `allow read;` (banco inteiro
-legível sem login), `Pets` com leitura pública, `Localizacoes` com **escrita pública**.
+### 5.1 Passo 1 — ✅ feito e verificado (2026-09-11)
+- `firestore.rules` criado na raiz do repo do app + referenciado em `firebase.json` (antes só
+  existia como texto colado no console/chat).
+- Catch-all, `Pets` e `Localizacoes` passaram a exigir `request.auth != null` — fechou só o
+  acesso **sem nenhum login**; nada que já exigia auth mudou de comportamento.
+- **Antes de mexer em `Localizacoes` write**, perguntei ao usuário se ainda havia algum fluxo
+  público real (página/Cloud Function) escrevendo lá — confirmado que não, então já fechei a
+  escrita também (não só a leitura).
+- Deploy: `firebase deploy --only firestore:rules --project pet-connect-c53f1` (CLI já estava
+  autenticado nesta máquina). **Só rodei depois de confirmação explícita do usuário** — é uma
+  mudança em produção, diferente de tudo que veio antes (containers/testes locais).
+- Verificação pós-deploy (script no scratchpad, sem precisar do app): `GET` anônimo em
+  `Pets`/`Localizacoes` → `403 PERMISSION_DENIED` (antes: 200); com um ID Token real → `200`
+  continua igual (leitura do próprio `Usuarios`, query em `Pets`).
+- Histórico completo (regra antiga vs. nova, análise) em `docs/security/firestore-rules-deployed.md`.
 
-### 5.2 Ordem seguindo o plano mestre (etapa 4, seção "FASE 11")
-1. **Baixo risco, fazer logo:** versionar `firestore.rules` no repo do app (hoje não existe
-   arquivo, só o texto colado no chat) e referenciar em `firebase.json`. Trocar o catch-all
-   `allow read;` → `allow read: if request.auth != null;` (corta leitura anônima de PII).
-   Testar o app antigo depois (login, ver perfil, ver pets) — se algo quebrar, é sinal de que
-   o app antigo dependia de leitura anônima em algum ponto, reverter e investigar antes de
-   tentar de novo.
-2. **Assim que a FASE 9 (relato público) estiver servindo de verdade** (ou já pode ser feito
-   agora, já que o app antigo não deveria depender de escrever em `Localizacoes` além do fluxo
-   de scan que hoje não existe mais de verdade): `Localizacoes` → `write: if false`.
-3. **Só depois que os dados das fases 4-10 estiverem validados em uso real** (não só e2e):
-   `allow read, write: if false` nas coleções que já têm equivalente 100% funcional na API
-   (`Usuarios`, `Pets` e as subcoleções, que aliás já estão vazias).
-4. Rate limiting/CORS/headers de segurança no backend (parte do escopo original da FASE 11,
-   ainda não feito — o backend não tem rate limiting em lugar nenhum ainda, nem nos endpoints
-   públicos da FASE 9).
-5. Checklist: nenhum segredo no repo (app ou backend) — `git log` de ambos limpo.
+### 5.2 O que falta (nenhuma urgência — sem uso real dependendo disso)
+1. `Localizacoes` → `write: if false` de vez (hoje só exige login; como não há mais uso real,
+   dá pra travar de vez sem pedir confirmação de novo — é uma continuação do que já foi
+   decidido, não uma decisão nova).
+2. **Só depois que as FASES 4–10 estiverem validadas em uso real** (não só e2e — alguém de
+   verdade usando o app com as flags ligadas por um tempo): `allow read, write: if false` em
+   `Usuarios`/`Pets` (as coleções que já têm equivalente 100% funcional na API).
+3. Rate limiting/CORS/headers de segurança no backend — ainda **nada** disso existe, nem nos
+   endpoints públicos da FASE 9 (que hoje aceitam qualquer volume de requisição anônima).
+4. Checklist final: nenhum segredo no repo (app ou backend) — `git log` de ambos limpo.
 
-### 5.3 Cuidado
-Esta fase é a primeira onde um erro pode **tirar o app antigo do ar** (os 18 usuários reais
-ainda o usam). Cada mudança de regra: aplicar, testar login+leitura básica no app antigo (ou
-pedir pro usuário testar), só then seguir pro próximo passo. Rollback = reaplicar o texto
-salvo em `firestore-rules-deployed.md`.
+### 5.3 Lição pra próxima vez que mexer em regras de produção
+Sempre: (a) confirmar com o usuário a suposição de que "nada real depende disso" antes de
+restringir algo que hoje é público — não presumir; (b) pedir confirmação explícita antes do
+`firebase deploy` em si, separada da confirmação de "seguir com a fase"; (c) verificar
+depois via requisição real (autenticada e anônima), não só "deployou sem erro".
 
 ---
 
@@ -171,11 +178,11 @@ salvo em `firestore-rules-deployed.md`.
 
 - **FASE 9:** página pública + URL real do QR — precisa de hospedagem (domínio/host).
 - **FASE 10:** `CLOUDINARY_API_KEY`/`CLOUDINARY_API_SECRET` reais — sem isso o round-trip de upload assinado não foi testado contra o Cloudinary de verdade (só o código + os 503 graciosos).
-- **Rate limiting** nos endpoints públicos (`/api/v1/public/**`) — nenhuma proteção hoje.
+- **FASE 11:** `Localizacoes.write` ainda exige só login (não `if false` de vez); endurecimento final (`Usuarios`/`Pets` → `if false`) espera uso real validado; rate limiting nos endpoints públicos ainda não existe.
 - **CI do backend:** não há GitHub Actions ainda. Sugerido: workflow `mvn -B test`.
 - **Hospedagem staging:** MongoDB Atlas M0 + host free — só quando for testar fora do localhost.
 - **Validação amostral manual** da FASE 3: 1 spot-check feito (Nymeria/Aleksander OK); conferir mais alguns.
 - **Contas borderline** "Marcola"/"registro": confirmar remoção com o usuário.
 - **`auth_flow_test.dart`** ainda bate no Firebase real, fora do CI — reescrever na FASE 12.
 - **APK de release** (loopback) segue sem solução no Windows; não bloqueia a migração (`flutter run` pra device funciona).
-- **Validação no device**: nenhuma das flags foi testada de verdade no celular do usuário ainda — só e2e via script contra a API. Vale rodar com todas ligadas numa sessão e comparar com o Firestore antes de ir pra FASE 11.
+- **Validação no device**: nenhuma das flags foi testada de verdade no celular do usuário ainda — só e2e via script contra a API. Vale rodar com todas ligadas numa sessão e comparar com o Firestore.

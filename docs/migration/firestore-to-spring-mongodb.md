@@ -213,19 +213,18 @@ Usuário optou por **"só local por enquanto"** (ver decisão abaixo): construir
 
 ---
 
-## FASE 11 — Endurecer segurança e Firestore Rules
+## FASE 11 — Endurecer segurança e Firestore Rules — 🚧 EM ANDAMENTO (passo 1 concluído)
 
-Regras deployadas hoje e análise: [`../security/firestore-rules-deployed.md`](../security/firestore-rules-deployed.md).
-Situação atual: **banco inteiro legível sem login** (catch-all `allow read`), `Localizacoes` com **escrita pública**.
+Regras e histórico: [`../security/firestore-rules-deployed.md`](../security/firestore-rules-deployed.md) + `firestore.rules` na raiz do repo (fonte da verdade a partir de agora).
 
-- [ ] **Cedo (após FASE 3, baixo risco):** criar `firestore.rules` no repo + referenciar em `firebase.json`; trocar catch-all `allow read;` → `allow read: if request.auth != null;` (corta leitura anônima de PII). Testar o app antigo.
-- [ ] **Assim que a nova gravação de avistamento estiver na API:** `Localizacoes` → `write: if false`.
-- [ ] **FASE 11 propriamente (após FASES 3–5 validadas):** `allow read, write: if false` nas coleções já migradas; manter só o mínimo para o app antigo até a FASE 13.
-- [ ] Rate limiting, CORS, headers de segurança no backend.
+- [x] **Passo 1 (2026-09-11, deployado e verificado):** `firestore.rules` criado no repo + referenciado em `firebase.json`; catch-all, `Pets` e `Localizacoes` passaram a exigir `request.auth != null` (fechou só o acesso **sem login nenhum** — nada que já exigia auth mudou). Confirmado com o usuário: nenhum fluxo público real ainda escrevia em `Localizacoes`, então a escrita também foi fechada (não só a leitura). Verificado via REST: anônimo → 403 em `Pets`/`Localizacoes`; autenticado → 200 continua normal.
+- [ ] `Localizacoes` → `write: if false` de vez (hoje exige login; sem uso real, pode travar de vez).
+- [ ] **Endurecimento final:** após uso real (não só e2e) das FASES 4–10 validado, `allow read, write: if false` nas coleções com equivalente 100% funcional na API (`Usuarios`, `Pets`); manter só o mínimo pro app antigo até a FASE 13.
+- [ ] Rate limiting, CORS, headers de segurança no backend — inclui os endpoints públicos da FASE 9, que hoje não têm nenhuma proteção.
 - [ ] Revisão: nenhum segredo no repo (app ou backend); `git log` limpo de credenciais novas.
 - [ ] App Check / reforço de auth se aplicável.
 
-**Rollback:** reverter `firestore.rules` para o conteúdo registrado em `firestore-rules-deployed.md`.
+**Rollback do passo 1:** `git revert` no commit que endureceu `firestore.rules` + `firebase deploy --only firestore:rules` de novo (ou colar o "Conteúdo anterior" de `firestore-rules-deployed.md` direto no Console).
 
 ---
 
