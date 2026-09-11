@@ -1,5 +1,13 @@
 # Diagrama de Classes — PetConnect
 
+> ⚠️ **Legado**: reflete o modelo do **Firestore** (nomes de campo em
+> português, coleções `Usuarios`/`Pets`). O schema real do MongoDB (que
+> a API usa) tem nomes em inglês e campos adicionais (`publicId`,
+> `legacyFirestoreId`, `vaccinatedFlag`, etc.) — ver
+> `docs/database/mongodb-target-schema.md` para o schema atual, e
+> `docs/validation/rf01-rf32-parity.md` para o mapeamento campo a campo
+> confirmado entre os dois modelos.
+
 Atualizado para refletir a estrutura real do Firestore já existente (`docs/modelo-dados-firestore.md`) — nomes de classe e campo em português, alinhados às coleções `Usuarios` e `Pets`.
 
 ```mermaid

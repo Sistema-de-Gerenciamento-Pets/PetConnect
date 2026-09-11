@@ -1,5 +1,12 @@
 # Diagrama de Caso de Uso — PetConnect
 
+> ⚠️ **Legado**: representa os casos de uso na visão original (Firestore
+> direto), anterior à migração. Continua válido do ponto de vista de
+> **produto** (os casos de uso do tutor não mudaram) — o que mudou é só
+> o backend por trás. Não inclui os fluxos novos da migração (upload
+> assinado, avistamento público com rate limiting) — ver
+> `docs/diagramas/arquitetura.md` pra a visão técnica atualizada.
+
 Mermaid não tem um tipo nativo de diagrama de caso de uso UML, então representamos com um `graph` (atores nas pontas, casos de uso como nós arredondados).
 
 ```mermaid

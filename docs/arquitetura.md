@@ -1,5 +1,26 @@
 # Arquitetura — PetConnect
 
+> ⚠️ **Documento histórico, parcialmente desatualizado** (mantido de
+> propósito — não apagar, é o registro do desenho original). Escrito
+> antes da decisão de migrar para Spring Boot + MongoDB. O que mudou de
+> verdade:
+> - **Backend**: não é mais "Firestore direto do client" — é Flutter →
+>   API Spring Boot (`/api/v1`) → MongoDB + Cloudinary, com Firebase Auth
+>   só como identidade. Ver `docs/migration/firestore-to-spring-mongodb.md`
+>   (plano fase a fase) e `docs/diagramas/arquitetura.md` (diagrama
+>   atualizado).
+> - **Página pública do QR code**: a Cloud Function mencionada abaixo
+>   **nunca foi implementada** — o que existe hoje é um endpoint REST na
+>   própria API (`GET /api/v1/public/pets/{publicId}`); a página HTML em
+>   si ainda não foi construída (decisão de hospedagem pendente).
+> - **Upload de imagem**: não é mais Cloudinary com preset "unsigned" —
+>   é upload assinado pelo backend (ver `docs/next-stage/05-security-review.md`).
+>
+> O resto deste documento (organização por feature, `lib/core`,
+> `lib/routing`, fluxo de dados dentro do app) **continua válido** — a
+> migração não mudou a estrutura interna do Flutter, só de onde os dados
+> vêm.
+
 ## Stack
 
 - **Flutter** (Android + iOS)

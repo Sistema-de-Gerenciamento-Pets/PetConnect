@@ -1,5 +1,31 @@
 # Segurança — PetConnect
 
+> ⚠️ **Documento histórico, parcialmente desatualizado** (mantido de
+> propósito). Escrito antes da migração para Spring Boot + MongoDB. O
+> que mudou de verdade — fonte atual: `docs/next-stage/05-security-review.md`
+> e `docs/security/firestore-rules-deployed.md`:
+> - **Autorização por tutor**: hoje é garantida tanto pelas Firestore
+>   Rules (legado) quanto pela API (`petService.get(tutorId, petId)` em
+>   todo endpoint) — não é mais só uma "regra a refinar", está
+>   implementada e testada nos dois lados.
+> - **Página pública do QR code**: a "Cloud Function" descrita abaixo
+>   nunca foi implementada — o endpoint real é um controller REST na
+>   API (`PublicPetController`), com **rate limiting** (30 leituras/10
+>   escritas por minuto por IP) que este documento nem menciona.
+> - **Upload de imagem**: não é mais preset "unsigned" — é assinado
+>   pelo backend, com posse do arquivo verificada por pasta (ver
+>   `docs/next-stage/05-security-review.md`).
+> - **Firestore Rules**: endurecidas (FASE 11) — o "esboço" abaixo já
+>   foi superado pela versão real em produção, documentada em
+>   `docs/security/firestore-rules-deployed.md`.
+> - **LGPD**: mapa técnico de dados feito em
+>   `docs/privacy/data-flow-and-lgpd-readiness.md` (mais detalhado que
+>   a seção abaixo).
+>
+> App Check e CAPTCHA continuam como recomendação **não implementada** —
+> avaliados em `docs/next-stage/05-security-review.md`, decisão de não
+> implementar agora (sem problema real observado ainda).
+
 ## Autenticação
 
 - Autenticação via **Firebase Authentication** (e-mail/senha, Google, Facebook). Senhas nunca passam pelo nosso código em texto puro — o SDK do Firebase cuida do hashing/transporte.

@@ -65,14 +65,19 @@ Convenção: `RFxx` — identificador único, usado também para rastrear casos 
 | RF29 | O sistema deve permitir editar, cancelar e marcar uma consulta como realizada. |
 | RF30 | O sistema deve notificar o tutor sobre consultas agendadas próximas. |
 
-## Localização (proposta — a confirmar)
+## Localização
 
-Existe uma coleção `Localizacoes` no Firestore já existente, cujos campos ainda não foram compartilhados. Hipótese de uso, a confirmar:
+> **Atualizado**: implementado de ponta a ponta na API (`location`
+> module, FASE 9 da migração) — deixa de ser proposta. Detalhe completo
+> e evidência de teste em `docs/validation/rf01-rf32-parity.md`. A
+> experiência de ponta a ponta (achador escaneando um QR e vendo/reportando
+> pela página pública) ainda depende da FASE 9 web (hospedagem pendente) —
+> o endpoint em si já existe e está testado.
 
 | ID | Requisito |
 |----|-----------|
-| RF31 | *(proposto)* Quando alguém encontra um pet e acessa a página pública do QR code, o sistema pode permitir registrar a localização onde o pet foi visto. |
-| RF32 | *(proposto)* O tutor deve conseguir visualizar os registros de localização reportados para seu pet. |
+| RF31 | Quando alguém encontra um pet e acessa a página pública do QR code, o sistema permite registrar a localização onde o pet foi visto — `POST /api/v1/public/pets/{publicId}/sightings`, anônimo, com rate limiting. |
+| RF32 | O tutor consegue visualizar os registros de localização reportados para seu pet — `GET /api/v1/pets/{id}/locations`, autenticado. |
 
 ## Fora de escopo nesta fase
 
