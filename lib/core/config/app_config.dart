@@ -37,4 +37,7 @@ class AppConfig {
 
   /// FASE 9 — avistamentos (RF31/32) via API.
   static const bool useApiForLocalizacao = bool.fromEnvironment('USE_API_LOCALIZACAO');
+
+  /// FASE 10 — upload/exclusão de anexo assinados pelo backend (Cloudinary).
+  static const bool useApiForUpload = bool.fromEnvironment('USE_API_UPLOAD');
 }
