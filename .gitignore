@@ -46,6 +46,11 @@ app.*.map.json
 # Firebase (não commitar credenciais/config gerada)
 **/google-services.json
 **/GoogleService-Info.plist
-lib/firebase_options.dart
+# lib/firebase_options.dart É COMMITADO DE PROPÓSITO (achado no CI, FASE
+# próxima etapa): sem ele, `flutter analyze`/build falham num checkout
+# limpo. Contém só as API keys client-side do Firebase (públicas por
+# design — vão pro APK/bundle de qualquer app compilado; a proteção real
+# vem das Firestore Rules + Firebase Auth, não de escondê-las). Ver
+# docs/seguranca.md, seção "Segredos e configuração".
 .firebase/
 firebase-debug.log
