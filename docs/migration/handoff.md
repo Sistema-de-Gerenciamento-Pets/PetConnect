@@ -21,7 +21,8 @@
 | 9 — QR + página pública | ✅ **parcial** — API pública ok (flag `USE_API_LOCALIZACAO` no lado autenticado); página web + URL real do QR pendentes de hospedagem (usuário: "só local por enquanto") |
 | 10 — Upload assinado (Cloudinary) | ✅ **código pronto e testado** (flag `USE_API_UPLOAD`); round-trip real pendente da API Secret do usuário |
 | **11 — Endurecer Firestore Rules + rate limiting** | ✅ **fechada** — rules passos 1 e 2 deployados/verificados + rate limiting nos endpoints públicos (ver seção 5). Endurecimento final de `Usuarios`/`Pets` deliberadamente adiado (gated em uso real) |
-| 12–13 | pendentes (ver seção 6) |
+| **12 — Settings + validação total** | 🚧 **em andamento** — settings já migrado (era um sub-produto da FASE 4) e `auth_flow_test.dart` reescrito contra emulador+API (ver seção 6); resto depende de staging/uso real/decisão do usuário |
+| 13 | pendente (ver seção 6) |
 
 Todas as flags default **off** — sem `--dart-define`, o app roda 100% Firebase, como sempre.
 
@@ -94,7 +95,8 @@ temporariamente e apagar depois).
 
 ## 3. Fatos e armadilhas
 
-- **Loopback / NIO Selector:** nesta máquina `Selector.open()` falha (`Unable to establish loopback connection`, AF_UNIX). Quebra (a) init do `firebase-admin` — contornado com `NetHttpTransport` no `FirebaseConfig` — e (b) start do Tomcat — contornado rodando a API em **container Linux** (`CloudinaryHttpClient` também usa `SimpleClientHttpRequestFactory` por cautela, embora dentro do container isso não seja necessário). `flutter run` para device **funciona** (só o APK de release e servidor Java direto no Windows são afetados).
+- **Loopback / NIO Selector:** nesta máquina `Selector.open()` falha (`Unable to establish loopback connection`, AF_UNIX). Quebra (a) init do `firebase-admin` — contornado com `NetHttpTransport` no `FirebaseConfig` — e (b) start do Tomcat — contornado rodando a API em **container Linux** (`CloudinaryHttpClient` também usa `SimpleClientHttpRequestFactory` por cautela, embora dentro do container isso não seja necessário). `flutter run` para device **funciona** (só o APK de release e servidor Java direto no Windows são afetados). Também quebra o **Firestore Emulator** (é Java) — só o **Auth Emulator** (Node.js) funciona sem contorno nesta máquina.
+- **`flutter test --platform=chrome` não funciona nesta máquina (achado na FASE 12):** falha mesmo num smoke test trivial, sem relação com nenhum teste específico — `Connection closed before test suite loaded.`, às vezes trava sem erro nenhum por vários minutos (CPU do processo Dart fica parada, não é só lento). O harness de teste em navegador do Dart também abre um socket de loopback local pro Chrome se conectar de volta, e parece esbarrar na mesma limitação de rede da máquina. Não tem workaround conhecido ainda (rodar dentro de um container Linux, como fizemos com a API, é o caminho óbvio mas não foi tentado — esforço maior que o valor pra uma única sessão). Efeito prático: `auth_flow_test.dart` (reescrito na FASE 12 contra o Auth Emulator + API real) não pôde ser **executado** nesta máquina pra confirmar que passa — só a lógica foi revisada e as peças (emulador sozinho, e token do emulador aceito pela API via curl) foram validadas isoladamente. Falta rodar em outra máquina ou num CI (Linux, sem esse bug).
 - **Portas:** 8080/27017 do host costumam estar ocupadas → API em **8090**, Mongo em **27018**.
 - **Firebase Storage morto** (billing encerrado): 18 imagens legadas viraram `photoUrl: null` + aviso `storage-image-lost`. Só sobrevivem URLs Cloudinary (2 users, 3 pets).
 - **Credencial Firebase:** `C:\Users\Aleksander\Documents\pet-connect-c53f1-firebase-adminsdk-t8ctg-326661da99.json` (fora dos repos). Montada read-only no container via `.env` (`FIREBASE_SA_PATH`).
@@ -210,12 +212,60 @@ não-relacionado — para pegar efeitos colaterais no catch-all), não só "depl
 
 ---
 
-## 6. FASES 12-13 (resumo — detalhe no plano mestre)
+## 6. FASE 12 — Settings + validação total (🚧 em andamento)
 
-| Fase | Essência |
-|---|---|
-| 12 — Settings + validação total | reescrever `auth_flow_test.dart` (hoje bate no Firebase real, fora do CI); e2e por feature; período de observação com as flags ligadas em uso real antes de seguir |
-| 13 — Remover Firestore | só depois de tudo validado em produção por um tempo: tirar `cloud_firestore` do `pubspec.yaml`, apagar `firebase_*_repository.dart` e as flags (tudo passa a usar só `Api*Repository`). `firebase_auth` **fica** (é a fonte de identidade pra sempre). |
+### 6.1 Settings — ✅ nada a fazer (2026-09-11)
+Checado antes de escrever qualquer código: `ConfiguracoesScreen`/`EditarPerfilScreen` já usam
+`usuarioRepositoryProvider` desde a FASE 4 (branch pela flag `USE_API_USUARIO`), e `grep -rl
+cloud_firestore lib` só acha os `Firebase*Repository` (mantidos de propósito até a FASE 13) +
+o provider que expõe `firestoreProvider`. Não existiam preferências "soltas" (tema,
+notificações etc.) fora do que cada fase já migrou junto com sua feature.
+
+### 6.2 `auth_flow_test.dart` reescrito — ✅ feito, ⚠️ não executado nesta máquina (2026-09-11)
+Antes: `Firebase.initializeApp` contra o projeto **real**, criava um usuário de Auth de
+verdade a cada rodada (por isso fora do CI). Agora:
+- `FirebaseAuth.instance.useAuthEmulator('localhost', 9099)` — auth fala com o **Auth
+  Emulator** local, nunca com produção.
+- Teste roda com `--dart-define=USE_API_USUARIO=true` — o perfil do tutor vai pra API+Mongo
+  reais (`ApiUsuarioRepository`), não pro Firestore. Não precisa do Firestore Emulator (que é
+  Java e esbarraria no mesmo bug de loopback que afeta o Tomcat nesta máquina — seção 3).
+- `tearDownAll` limpa os dois lados: `DELETE /api/v1/me` (via `http`, com o ID token do
+  usuário) + `user.delete()` no emulador.
+
+**Validado nesta sessão, isoladamente, antes de reescrever o teste:**
+1. `firebase emulators:start --only auth` sobe e responde nesta máquina (Node.js, não JVM —
+   não pega o bug de loopback).
+2. Um usuário criado via REST do emulador (`identitytoolkit.googleapis.com` local) gera um ID
+   Token que a API real (`FIREBASE_AUTH_EMULATOR_HOST=host.docker.internal:9099` no
+   container) **aceita de verdade**: `GET /api/v1/me` provisionou o usuário no Mongo, `DELETE
+   /api/v1/me` removeu — confirmado via `curl`, não só lido no código do Admin SDK.
+3. `flutter analyze` no arquivo reescrito: sem problemas.
+
+**Não validado — achado novo, documentado na seção 3:** `flutter test --platform=chrome` não
+roda nesta máquina, nem para um smoke test trivial sem nenhuma relação com este arquivo
+(`Connection closed before test suite loaded.`, ou trava minutos sem erro). Mesma família do
+bug de loopback que já quebrava o Tomcat/Firestore Emulator direto no Windows — só que este
+processo não é Java, então é uma manifestação nova, não coberta pelo contorno existente
+(rodar em container Linux). **Ação:** reverti tudo que toquei pra estado normal (parei o Auth
+Emulator, tirei `FIREBASE_AUTH_EMULATOR_HOST` do container — confirmado que a API voltou a
+aceitar token real) antes de encerrar. O teste em si está pronto e a lógica foi validada peça
+por peça; falta só confirmar rodando de verdade, em outra máquina ou (melhor) num CI Linux.
+
+### 6.3 O que falta (fora do meu alcance sozinho)
+1. **E2E por feature contra staging** — não há staging hoje (depende de hospedagem, já listado
+   nas pendências gerais).
+2. **Período de observação em produção com as flags ligadas** — precisa do usuário rodando o
+   app novo de verdade por um tempo. Não dá pra simular isso numa sessão.
+3. **Checklist RF01–RF32 assinado** — posso montar o mapeamento RF → implementação/teste
+   quando pedido, mas "assinar" é decisão do usuário depois de validar em uso real.
+
+---
+
+## 6b. FASE 13 — Remover Firestore (resumo — detalhe no plano mestre)
+
+Só depois de tudo validado em produção por um tempo: tirar `cloud_firestore` do
+`pubspec.yaml`, apagar `firebase_*_repository.dart` e as flags (tudo passa a usar só
+`Api*Repository`). `firebase_auth` **fica** (é a fonte de identidade pra sempre).
 
 ---
 

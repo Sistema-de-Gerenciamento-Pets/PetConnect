@@ -228,13 +228,13 @@ Regras e histórico: [`../security/firestore-rules-deployed.md`](../security/fir
 
 ---
 
-## FASE 12 — Feature **Settings** + validação total + testes
+## FASE 12 — Feature **Settings** + validação total + testes — 🚧 EM ANDAMENTO
 
-- [ ] Migrar quaisquer preferências restantes; revisar todas as telas de configurações contra a API.
-- [ ] Reescrever `auth_flow_test.dart` contra emulador/mng do backend (R-11).
-- [ ] Testes de integração end-to-end por feature (staging).
-- [ ] Período de observação em produção com **flags ligadas** e Firestore ainda presente como rede de segurança (somente leitura).
-- [ ] Checklist de paridade funcional RF01–RF32 assinado.
+- [x] **Migrar preferências/telas de configurações (2026-09-11):** nada pendente — `ConfiguracoesScreen`/`EditarPerfilScreen` já passam 100% por `usuarioRepositoryProvider` desde a FASE 4 (flag `USE_API_USUARIO`); `grep` confirma que nenhum outro arquivo fora dos `Firebase*Repository` (mantidos de propósito até a FASE 13) importa `cloud_firestore`. Não havia preferências "soltas" (tema, notificações etc.) fora do que já foi migrado feature a feature.
+- [x] **Reescrever `auth_flow_test.dart` contra emulador/mng do backend — R-11 (2026-09-11):** agora aponta pro **Firebase Auth Emulator** (não produção) + a API/Mongo reais (`USE_API_USUARIO=true`) — não toca Firestore Emulator (Java, mesmo bug de loopback do Tomcat) nem cria nada em produção. Peças validadas isoladamente: Auth Emulator sozinho funciona nesta máquina; um token emitido por ele foi aceito de ponta a ponta pela API real via curl (`GET`/`DELETE /api/v1/me`). **Não verificado rodando de fato**: `flutter test --platform=chrome` falha nesta máquina mesmo pra um smoke test trivial sem relação com este arquivo (mesma família do bug de loopback documentado no `handoff.md`) — falta confirmar em outra máquina ou em CI.
+- [ ] Testes de integração end-to-end por feature (staging) — sem staging ainda (depende de hospedagem, item já listado nas pendências).
+- [ ] Período de observação em produção com **flags ligadas** — depende do usuário rodar o app novo de verdade por um tempo; não é algo que eu possa fazer sozinho.
+- [ ] Checklist de paridade funcional RF01–RF32 assinado — posso montar o checklist mapeando RF → implementação/teste, mas o "assinado" é uma decisão do usuário após uso real.
 
 **Rollback:** flags desligam feature a feature.
 
