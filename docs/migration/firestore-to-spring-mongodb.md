@@ -133,15 +133,18 @@ Verificado no Mongo: 0 pets sem `tutorId`, 0 locations sem `petId`, 2 usuários 
 
 ---
 
-## FASE 6 — feature **Vacinas**
+## FASE 6 — feature **Vacinas** — ✅ CONCLUÍDA
 
-> **Sem migração de dados** — `Pets/*/vacinas` está vazio no Firestore. Só API + troca de repositório no app.
+> **Sem migração de dados** — `Pets/*/vacinas` estava vazio no Firestore.
 
-- [ ] `GET/POST/PATCH/DELETE /api/v1/pets/{petId}/vaccines`.
-- [ ] `ApiVacinaRepository` + flag `useApiForVacinas`. Alerta de próxima dose: manter regra no app (ou expor `alertStatus` no DTO).
-- [ ] Testar; comparar; corrigir.
+- [x] Backend módulo `vaccine`: `GET/POST/PATCH/DELETE /api/v1/pets/{petId}/vaccines` (`VaccineController`/`VaccineService`). Posse via `PetService.get` → pet/vacina de outro tutor → **404**. Lista em ordem cronológica.
+- [x] Cascata: `PetService.delete` apaga as vacinas do pet. `UserService.deleteAccount` refatorado para chamar `PetService.delete` por pet (cascata única).
+- [x] App `ApiVacinaRepository` (`lib/features/pet/data/`) + flag `AppConfig.useApiForVacinas` (`USE_API_VACINAS`). `brToIso`/`isoToBr` extraídos para `core/utils/br_date.dart` (compartilhados). Regra de alerta de próxima dose continua **no app**.
+- [x] `vacina_list_screen`: pull-to-refresh + invalidate; `vacina_form_screen`: invalidate.
+- [x] Testes: `VaccineControllerTest` (6); `flutter analyze` limpo + 23 Dart. **Verificado e2e** num pet migrado: `GET/POST/PATCH/DELETE`, ordem cronológica, 404 cross-tenant.
+- [ ] Teste no device — pendente do usuário.
 
-**Rollback:** flag off + `db.vaccines.drop()`.
+**Rollback:** `USE_API_VACINAS=false` (default) + `db.vaccines.drop()`.
 
 ---
 

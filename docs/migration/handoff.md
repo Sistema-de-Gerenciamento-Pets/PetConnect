@@ -1,7 +1,7 @@
 # Handoff — estado da migração e próximos passos
 
 > Documento vivo para retomar o trabalho (por mim numa próxima sessão ou por outra pessoa).
-> Atualizado em 2026-09-11, ao final da FASE 5.
+> Atualizado em 2026-09-11, ao final da FASE 6.
 
 ---
 
@@ -15,8 +15,9 @@
 | 3 — Migração de dados (`users`/`pets`/`locations`) | ✅ rodada real: 11 users, 21 pets, 64 locations |
 | 4 — Feature **Tutor** no app via API | ✅ verificada e2e (flag `USE_API_USUARIO`, default off) |
 | 5 — Feature **Pets** no app via API | ✅ verificada e2e (flag `USE_API_PETS`, default off) |
-| **6 — Feature Vacinas** | ⏭️ **próxima** |
-| 7–13 | pendentes (ver seção 6) |
+| 6 — Feature **Vacinas** | ✅ verificada e2e (flag `USE_API_VACINAS`, default off) |
+| **7 — Feature Consultas** | ⏭️ **próxima** |
+| 8–13 | pendentes (ver seção 6) |
 
 **Repositórios**
 - App Flutter: `C:\Users\Aleksander\Projetos\Mobile - Flutter\PetConnect` — `github.com/AleksGustavo/PetConnect`, branch de trabalho `feature/backend-spring-mongodb-migration`.
@@ -90,45 +91,56 @@ MONGODB_URI="mongodb://localhost:27018/petconnect" \
 
 ---
 
-## 4. FASES 4 e 5 — o que ficou pronto (molde para as próximas)
+## 4. FASES 4–6 — o que ficou pronto (molde para as próximas)
 
-- **Backend `user/`**: `MeController` (`GET`/`PATCH`/`DELETE /api/v1/me`), `UserService` (provisiona no 1º acesso, `update`, `deleteAccount` com cascata).
-- **Backend `pet/`**: `PetController` (`GET` lista + `GET/POST/PATCH/DELETE /{id}`), `PetService` (`ownedOr404` — posse por `tutorId`), `PetResponse`/`CreatePetRequest`/`UpdatePetRequest`.
-- **App**: `ApiClient`/`ApiException`/`AppConfig` (`lib/core/`), `ApiUsuarioRepository`, `ApiPetRepository`, providers condicionais pelas flags `USE_API_USUARIO`/`USE_API_PETS`.
-- **Padrões estabelecidos** (copiar nas fases 6–8):
-  - Repositório de API: `watch*` = `Stream.fromFuture` (emissão única); tela invalida o provider após mutar; Home tem pull-to-refresh.
-  - Mapeamento `dd/MM/yyyy` ↔ ISO e rótulos PT ↔ enums (mapas estáticos no repositório).
-  - Backend: DTO de request com Bean Validation; `ownedOr404`; 404 (não 403) para recurso de outro tutor; `@DeleteMapping` → 204 + cascata.
-  - Teste de controller: `@SpringBootTest @AutoConfigureMockMvc` + `@MockitoBean FirebaseTokenVerifier`, usuários salvos direto no repo, `JsonPath.read` para pegar ids.
-- **Pendente do usuário:** rodar no device com `USE_API_USUARIO=true USE_API_PETS=true` e comparar com as flags off (Firestore).
+- **Backend**: módulos `user/` (`/api/v1/me`), `pet/` (`/api/v1/pets`), `vaccine/` (`/api/v1/pets/{petId}/vaccines`). `PetService.get(tutorId, petId)` é a checagem de posse reutilizável; `VaccineService` a injeta.
+- **App**: `lib/core/` (`ApiClient`, `ApiException`, `AppConfig`, `br_date.dart` com `brToIso`/`isoToBr`); `Api{Usuario,Pet,Vacina}Repository`; providers condicionais pelas flags `USE_API_USUARIO`/`USE_API_PETS`/`USE_API_VACINAS`.
+- **Padrões estabelecidos** (copiar nas fases 7–8):
+  - Repositório de API: `watch*` = `Stream.fromFuture` (emissão única); tela invalida o provider após mutar; listas com pull-to-refresh.
+  - Mapeamento `dd/MM/yyyy` ↔ ISO (`brToIso`/`isoToBr`) e rótulos PT ↔ enums (mapas estáticos no repositório).
+  - Backend: sub-recurso do pet → `@RequestMapping("/api/v1/pets/{petId}/<recurso>")`, `service.list/create/update/delete(me.userId(), petId, ...)` sempre começando por `petService.get(tutorId, petId)` (404 se não for do tutor) + `ownedOr404(petId, subId)`. DTO com Bean Validation. `@DeleteMapping` → 204. Cascata do sub-recurso em `PetService.delete`.
+  - Teste de controller: `@SpringBootTest @AutoConfigureMockMvc` + `@MockitoBean FirebaseTokenVerifier`, users/pets salvos direto no repo, `com.jayway.jsonpath.JsonPath.read` para pegar ids.
+  - e2e: script no scratchpad (molde `e2e-fase6.js`) — token real de um tutor migrado (`gjSwRiTU8wgjSCFBViyPjJqevAE3` tem 3 pets), CRUD, 404 cross-tenant, limpeza.
+- **Pendente do usuário:** rodar no device com as flags ligadas e comparar com elas off (Firestore).
 
 ---
 
-## 5. FASE 6 — Feature **Vacinas** (passo a passo)
+## 5. FASE 7 — Feature **Consultas** (passo a passo)
 
-Carteira de vacina de um pet. **Sem migração de dados** (subcoleção `Pets/*/vacinas` vazia). Molde: módulo `pet` + `ApiPetRepository`.
+Consultas veterinárias de um pet. **Sem migração de dados** (`Pets/*/consultas` vazia). Molde: módulo `vaccine`.
 
-### 5.1 Backend — módulo `vaccine`
-1. `vaccine/domain/Vaccine` (`@Document("vaccines")`): `id`, `petId` (indexado), `name`, `appliedAt` (Date), `nextDoseAt` (Date, opcional), `veterinarian`, `notes`, timestamps. (Campos extras do schema-alvo — `manufacturer`/`batch`/`dose`/`clinic`/`proofUrl` — podem ficar para depois.)
-2. `vaccine/infrastructure/VaccineRepository` — `findByPetIdOrderByAppliedAtDesc(petId)`, `deleteByPetId(petId)`, `deleteByPetIdIn(...)`.
-3. `vaccine/application/VaccineService` — **toda** operação recebe o `tutorId` do token e valida que o `petId` pertence a ele (reusar `PetService.get(tutorId, petId)` como checagem de posse; pode-se extrair um `PetOwnership` component ou injetar `PetService`). 404 se o pet não é do tutor ou a vacina não é do pet.
-4. `vaccine/web/VaccineController` sob **`/api/v1/pets/{petId}/vaccines`**: `GET` (lista), `POST` (201), `PATCH /{vaccineId}`, `DELETE /{vaccineId}` (204). DTOs `VaccineResponse` / `SaveVaccineRequest` (Bean Validation: `name` `@NotBlank`, `appliedAt` `@NotNull`).
-5. **Cascata:** em `PetService.delete`, além de `locations`, chamar `vaccines.deleteByPetIdIn(...)`. Atualizar `PetControllerTest` e `UserService.deleteAccount` (a exclusão de conta já apaga pets → e agora as vacinas).
-6. `VaccineControllerTest`: CRUD, escopo (vacina de pet de outro tutor → 404), 400 sem `name`/`appliedAt`.
+### 5.1 Backend — módulo `appointment`
+1. `appointment/domain/Appointment` (`@Document("appointments")`): `id`, `petId` (indexado), `scheduledDate` (LocalDate), `scheduledTime` (LocalTime, **nullable** — o app tem "horário opcional"), `veterinarian`, `reason`, `status` (enum), timestamps.
+2. `appointment/domain/AppointmentStatus` — enum **completo** de 7 (`REQUESTED`, `PENDING`, `CONFIRMED`, `COMPLETED`, `CANCELLATION_REQUESTED`, `CANCELLED`, `REJECTED`). O app só usa 3 (ver mapeamento abaixo); o enum já fica pronto para o fluxo clínica↔tutor futuro.
+3. `AppointmentRepository` — `findByPetIdOrderByScheduledDateAscScheduledTimeAsc(petId)`, `deleteByPetId(petId)`.
+4. `AppointmentService` — molde `VaccineService` (posse via `PetService.get`). **Sem `delete`** na interface do app (cancelar = `status`), mas pode expor `DELETE` no backend por consistência/testes; o `ApiConsultaRepository` só usa `PATCH`.
+5. `AppointmentController` sob `/api/v1/pets/{petId}/appointments`: `GET`, `POST` (201), `PATCH /{appointmentId}`. DTO `AppointmentRequest` (`scheduledDate` `@NotNull`, `veterinarian` `@NotBlank`, `reason` `@NotBlank`, `scheduledTime`/`status` opcionais). `AppointmentResponse` devolve `status` como string.
+6. Cascata: `PetService.delete` → `appointments.deleteByPetId(petId)`. Atualizar `PetService` + testes.
+7. `AppointmentControllerTest`: CRUD, ordem, 404 cross-tenant, 400 sem obrigatórios, cascata.
 
-### 5.2 App — `ApiVacinaRepository`
-1. Ver a interface atual: `lib/features/pet/domain/vacina_repository.dart` (`watchVacinas(petId)`, `createVacina`, `updateVacina`, `deleteVacina`). Model `Vacina` em `domain/vacina.dart` — datas `dd/MM/yyyy`.
-2. `lib/features/pet/data/api_vacina_repository.dart` implementando a interface via `/api/v1/pets/{petId}/vaccines`. `watchVacinas` = emissão única; converter datas.
-3. Regra de alerta (`vacina_alerta.dart`) **fica no app** — não precisa do backend.
+**Mapeamento de status app ↔ API** (mesma tabela da migração):
+
+| App (`ConsultaStatus`) | API |
+|---|---|
+| `agendada` | `CONFIRMED` |
+| `realizada` | `COMPLETED` |
+| `cancelada` | `CANCELLED` |
+
+Qualquer outro valor da API que o app receber → tratar como `agendada` (fallback já existe em `ConsultaStatus.fromValue`).
+
+### 5.2 App — `ApiConsultaRepository`
+1. Interface `lib/features/pet/domain/consulta_repository.dart`: `watchConsultas(petId)`, `createConsulta`, `updateConsulta` (**não há `delete`**). Model `Consulta`: `data` (dd/MM/yyyy), `horario` (`HH:mm?`), `veterinario`, `motivo`, `status` (enum).
+2. `lib/features/pet/data/api_consulta_repository.dart` via `/api/v1/pets/{petId}/appointments`. `data` ↔ `scheduledDate` (ISO), `horario` ↔ `scheduledTime` (`"HH:mm"` ou `HH:mm:ss` — normalizar), `motivo` ↔ `reason`, `veterinario` ↔ `veterinarian`, `status` ↔ enum via mapa.
+3. Regras de alerta (`consulta_alerta.dart`) **ficam no app**.
 
 ### 5.3 App — providers + telas
-- `vacina_providers.dart`: `vacinaRepositoryProvider` alterna Api ↔ Firebase por `AppConfig.useApiForVacinas` (adicionar a flag em `app_config.dart`).
-- Telas `vacina_list_screen` / `vacina_form_screen`: após mutar, `ref.invalidate(vacinasProvider(petId))`; pull-to-refresh na lista.
+- `consulta_providers.dart`: flag `AppConfig.useApiForConsultas` (`USE_API_CONSULTAS` — adicionar em `app_config.dart`).
+- Telas `consulta_list_screen` / `consulta_form_screen`: `ref.invalidate(consultasProvider(petId))` após mutar; pull-to-refresh na lista.
 
 ### 5.4 Fechar
 - `flutter analyze` limpo, `flutter test test/core/ test/features/pet/` verde, `mvn -B test` verde.
-- **e2e** (script no scratchpad, molde `e2e-fase5.js`): criar vacina para um pet migrado, listar, editar, excluir; vacina de pet alheio → 404.
-- Commit, marcar FASE 6 no plano mestre e aqui. `USE_API_VACINAS` default off.
+- **e2e** (molde `e2e-fase6.js`): agendar/listar/editar/cancelar (via status) num pet migrado; 404 cross-tenant.
+- Commit, marcar FASE 7 no plano mestre e aqui. `USE_API_CONSULTAS` default off.
 
 ---
 
