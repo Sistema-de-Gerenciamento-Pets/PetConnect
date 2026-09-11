@@ -31,4 +31,7 @@ class AppConfig {
 
   /// FASE 7 — consultas via API.
   static const bool useApiForConsultas = bool.fromEnvironment('USE_API_CONSULTAS');
+
+  /// FASE 8 — histórico médico via API.
+  static const bool useApiForHistorico = bool.fromEnvironment('USE_API_HISTORICO');
 }

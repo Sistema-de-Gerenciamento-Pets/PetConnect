@@ -126,6 +126,8 @@ class _HistoricoFormScreenState extends ConsumerState<HistoricoFormScreen> {
       } else {
         await repository.createHistorico(widget.petId, registro);
       }
+      // A lista via API é uma emissão única — força o recarregamento.
+      ref.invalidate(historicoMedicoProvider(widget.petId));
       if (mounted) context.pop();
     } catch (_) {
       if (mounted) {

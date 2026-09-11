@@ -45,6 +45,7 @@ class HistoricoListScreen extends ConsumerWidget {
       }
     }
     await ref.read(historicoMedicoRepositoryProvider).deleteHistorico(petId, historico.id);
+    ref.invalidate(historicoMedicoProvider(petId));
   }
 
   @override
@@ -72,32 +73,48 @@ class HistoricoListScreen extends ConsumerWidget {
             child: Text('Não foi possível carregar o histórico.', style: TextStyle(color: AppColors.error)),
           ),
           data: (registros) {
+            Future<void> atualizar() async {
+              ref.invalidate(historicoMedicoProvider(petId));
+              await ref.read(historicoMedicoProvider(petId).future);
+            }
+
             if (registros.isEmpty) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Text(
-                    'Nenhum registro ainda.\nToque em "+" para adicionar.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textMuted),
-                  ),
+              return RefreshIndicator(
+                onRefresh: atualizar,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: const [
+                    SizedBox(height: 120),
+                    Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Text(
+                        'Nenhum registro ainda.\nToque em "+" para adicionar.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.textMuted),
+                      ),
+                    ),
+                  ],
                 ),
               );
             }
 
-            return ListView.separated(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 96),
-              itemCount: registros.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final historico = registros[index];
-                return HistoricoTile(
-                  historico: historico,
-                  onTap: () =>
-                      context.push('/pet/$petId/historico/${historico.id}/editar', extra: historico),
-                  onDelete: () => _confirmarExclusao(context, ref, historico),
-                );
-              },
+            return RefreshIndicator(
+              onRefresh: atualizar,
+              child: ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 96),
+                itemCount: registros.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final historico = registros[index];
+                  return HistoricoTile(
+                    historico: historico,
+                    onTap: () =>
+                        context.push('/pet/$petId/historico/${historico.id}/editar', extra: historico),
+                    onDelete: () => _confirmarExclusao(context, ref, historico),
+                  );
+                },
+              ),
             );
           },
         ),
