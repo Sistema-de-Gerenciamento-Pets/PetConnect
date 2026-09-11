@@ -105,6 +105,8 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
             genero: _genero ?? '',
             foto: _foto,
           );
+      // Recarrega o perfil (a fonte via API é uma emissão única).
+      ref.invalidate(currentUsuarioProvider);
       if (mounted) context.pop();
     } catch (_) {
       if (mounted) setState(() => _error = 'Não foi possível salvar. Tente novamente.');

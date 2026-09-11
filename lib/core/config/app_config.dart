@@ -1,0 +1,28 @@
+/// Configuração de ambiente e feature flags da migração para a API Spring.
+///
+/// Tudo vem de `--dart-define` no build/run. Sem nenhum define, o app roda
+/// 100% Firebase, exatamente como antes.
+///
+/// Exemplo (emulador Android apontando para a API local em container):
+/// ```
+/// flutter run \
+///   --dart-define=API_BASE_URL=http://10.0.2.2:8090 \
+///   --dart-define=USE_API_USUARIO=true
+/// ```
+class AppConfig {
+  const AppConfig._();
+
+  /// URL base da API (`/api/v1` é acrescentado pelo cliente).
+  /// `10.0.2.2` é o host visto de dentro do emulador Android.
+  static const String apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://10.0.2.2:8090',
+  );
+
+  /// FASE 4 — perfil do tutor (`GET`/`PATCH`/`DELETE /api/v1/me`) via API
+  /// em vez do Firestore. Login/cadastro/reset continuam no Firebase Auth.
+  static const bool useApiForUsuario = bool.fromEnvironment('USE_API_USUARIO');
+
+  /// FASE 5 — pets via API. (ainda não implementado)
+  static const bool useApiForPets = bool.fromEnvironment('USE_API_PETS');
+}
