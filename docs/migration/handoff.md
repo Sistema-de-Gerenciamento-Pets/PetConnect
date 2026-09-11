@@ -1,7 +1,7 @@
 # Handoff — estado da migração e próximos passos
 
 > Documento vivo para retomar o trabalho (por mim numa próxima sessão ou por outra pessoa).
-> Atualizado em 2026-09-11, ao final da FASE 6.
+> Atualizado em 2026-09-11, ao final da FASE 7.
 
 ---
 
@@ -16,8 +16,9 @@
 | 4 — Feature **Tutor** no app via API | ✅ verificada e2e (flag `USE_API_USUARIO`, default off) |
 | 5 — Feature **Pets** no app via API | ✅ verificada e2e (flag `USE_API_PETS`, default off) |
 | 6 — Feature **Vacinas** | ✅ verificada e2e (flag `USE_API_VACINAS`, default off) |
-| **7 — Feature Consultas** | ⏭️ **próxima** |
-| 8–13 | pendentes (ver seção 6) |
+| 7 — Feature **Consultas** | ✅ verificada e2e (flag `USE_API_CONSULTAS`, default off) |
+| **8 — Feature Histórico Médico** | ⏭️ **próxima** |
+| 9–13 | pendentes (ver seção 6) |
 
 **Repositórios**
 - App Flutter: `C:\Users\Aleksander\Projetos\Mobile - Flutter\PetConnect` — `github.com/AleksGustavo/PetConnect`, branch de trabalho `feature/backend-spring-mongodb-migration`.
@@ -91,56 +92,84 @@ MONGODB_URI="mongodb://localhost:27018/petconnect" \
 
 ---
 
-## 4. FASES 4–6 — o que ficou pronto (molde para as próximas)
+## 4. FASES 4–7 — o que ficou pronto (molde para as próximas)
 
-- **Backend**: módulos `user/` (`/api/v1/me`), `pet/` (`/api/v1/pets`), `vaccine/` (`/api/v1/pets/{petId}/vaccines`). `PetService.get(tutorId, petId)` é a checagem de posse reutilizável; `VaccineService` a injeta.
-- **App**: `lib/core/` (`ApiClient`, `ApiException`, `AppConfig`, `br_date.dart` com `brToIso`/`isoToBr`); `Api{Usuario,Pet,Vacina}Repository`; providers condicionais pelas flags `USE_API_USUARIO`/`USE_API_PETS`/`USE_API_VACINAS`.
-- **Padrões estabelecidos** (copiar nas fases 7–8):
-  - Repositório de API: `watch*` = `Stream.fromFuture` (emissão única); tela invalida o provider após mutar; listas com pull-to-refresh.
-  - Mapeamento `dd/MM/yyyy` ↔ ISO (`brToIso`/`isoToBr`) e rótulos PT ↔ enums (mapas estáticos no repositório).
-  - Backend: sub-recurso do pet → `@RequestMapping("/api/v1/pets/{petId}/<recurso>")`, `service.list/create/update/delete(me.userId(), petId, ...)` sempre começando por `petService.get(tutorId, petId)` (404 se não for do tutor) + `ownedOr404(petId, subId)`. DTO com Bean Validation. `@DeleteMapping` → 204. Cascata do sub-recurso em `PetService.delete`.
+- **Backend**: módulos `user/` (`/api/v1/me`), `pet/` (`/api/v1/pets`), `vaccine/` (`/api/v1/pets/{petId}/vaccines`), `appointment/` (`/api/v1/pets/{petId}/appointments`). `PetService.get(tutorId, petId)` é a checagem de posse reutilizável; `VaccineService`/`AppointmentService` a injetam.
+- **App**: `lib/core/` (`ApiClient`, `ApiException`, `AppConfig`, `br_date.dart` com `brToIso`/`isoToBr`); `Api{Usuario,Pet,Vacina,Consulta}Repository`; providers condicionais pelas flags `USE_API_USUARIO`/`USE_API_PETS`/`USE_API_VACINAS`/`USE_API_CONSULTAS`.
+- **Padrões estabelecidos** (copiar na FASE 8):
+  - Repositório de API: `watch*` = `Stream.fromFuture` (emissão única); tela invalida o provider após mutar; listas com pull-to-refresh (inclusive no estado vazio).
+  - Mapeamento `dd/MM/yyyy` ↔ ISO (`brToIso`/`isoToBr`) e rótulos PT ↔ enums (mapas estáticos no repositório). Horário `HH:mm` ↔ `HH:mm:ss` (`LocalTime` do Jackson) — ver `ApiConsultaRepository._horaParaApi/_horaDaApi`.
+  - Backend: sub-recurso do pet → `@RequestMapping("/api/v1/pets/{petId}/<recurso>")`, `service.list/create/update(me.userId(), petId, ...)` sempre começando por `petService.get(tutorId, petId)` (404 se não for do tutor) + `ownedOr404(petId, subId)`. DTO com Bean Validation. Cascata do sub-recurso em `PetService.delete`. Nem todo sub-recurso precisa de `DELETE` (consultas não têm — cancelar é status).
+  - `GlobalExceptionHandler` já cobre `HttpRequestMethodNotSupportedException`→405 e `NoHandlerFoundException`/`NoResourceFoundException`→404 (rota/verbo não mapeado não vira mais 500).
   - Teste de controller: `@SpringBootTest @AutoConfigureMockMvc` + `@MockitoBean FirebaseTokenVerifier`, users/pets salvos direto no repo, `com.jayway.jsonpath.JsonPath.read` para pegar ids.
   - e2e: script no scratchpad (molde `e2e-fase6.js`) — token real de um tutor migrado (`gjSwRiTU8wgjSCFBViyPjJqevAE3` tem 3 pets), CRUD, 404 cross-tenant, limpeza.
 - **Pendente do usuário:** rodar no device com as flags ligadas e comparar com elas off (Firestore).
 
 ---
 
-## 5. FASE 7 — Feature **Consultas** (passo a passo)
+## 5. FASE 8 — Feature **Histórico Médico** (passo a passo)
 
-Consultas veterinárias de um pet. **Sem migração de dados** (`Pets/*/consultas` vazia). Molde: módulo `vaccine`.
+Histórico médico de um pet, com anexos (exames/laudos, RF24). **Sem migração de dados** (`Pets/*/historicoMedico` vazia). Molde: módulo `vaccine`, **mas com uma diferença estrutural importante** — ver 5.0.
 
-### 5.1 Backend — módulo `appointment`
-1. `appointment/domain/Appointment` (`@Document("appointments")`): `id`, `petId` (indexado), `scheduledDate` (LocalDate), `scheduledTime` (LocalTime, **nullable** — o app tem "horário opcional"), `veterinarian`, `reason`, `status` (enum), timestamps.
-2. `appointment/domain/AppointmentStatus` — enum **completo** de 7 (`REQUESTED`, `PENDING`, `CONFIRMED`, `COMPLETED`, `CANCELLATION_REQUESTED`, `CANCELLED`, `REJECTED`). O app só usa 3 (ver mapeamento abaixo); o enum já fica pronto para o fluxo clínica↔tutor futuro.
-3. `AppointmentRepository` — `findByPetIdOrderByScheduledDateAscScheduledTimeAsc(petId)`, `deleteByPetId(petId)`.
-4. `AppointmentService` — molde `VaccineService` (posse via `PetService.get`). **Sem `delete`** na interface do app (cancelar = `status`), mas pode expor `DELETE` no backend por consistência/testes; o `ApiConsultaRepository` só usa `PATCH`.
-5. `AppointmentController` sob `/api/v1/pets/{petId}/appointments`: `GET`, `POST` (201), `PATCH /{appointmentId}`. DTO `AppointmentRequest` (`scheduledDate` `@NotNull`, `veterinarian` `@NotBlank`, `reason` `@NotBlank`, `scheduledTime`/`status` opcionais). `AppointmentResponse` devolve `status` como string.
-6. Cascata: `PetService.delete` → `appointments.deleteByPetId(petId)`. Atualizar `PetService` + testes.
-7. `AppointmentControllerTest`: CRUD, ordem, 404 cross-tenant, 400 sem obrigatórios, cascata.
+### 5.0 A pegadinha do `novoId` — decidir antes de codar
 
-**Mapeamento de status app ↔ API** (mesma tabela da migração):
+A interface atual (`lib/features/pet/domain/historico_medico_repository.dart`) tem um método
+que os outros repositórios não têm:
 
-| App (`ConsultaStatus`) | API |
-|---|---|
-| `agendada` | `CONFIRMED` |
-| `realizada` | `COMPLETED` |
-| `cancelada` | `CANCELLED` |
+```dart
+/// Gera um id novo sem gravar nada no Firestore — usado para já ter um
+/// caminho estável no Storage antes de o registro existir, já que os
+/// anexos (RF24) são enviados antes de o registro ser salvo.
+String novoId(String petId);
+```
 
-Qualquer outro valor da API que o app receber → tratar como `agendada` (fallback já existe em `ConsultaStatus.fromValue`).
+O fluxo hoje: a tela pede um id ao repositório (`_historico(petId).doc().id`, gerado
+localmente pelo SDK do Firestore, **sem rede**), sobe os anexos pro Cloudinary usando esse id
+no path, e só then cria o registro com `set(id, ...)` (não `add`). Isso não existe nas
+outras fases porque só o histórico médico tem anexo.
 
-### 5.2 App — `ApiConsultaRepository`
-1. Interface `lib/features/pet/domain/consulta_repository.dart`: `watchConsultas(petId)`, `createConsulta`, `updateConsulta` (**não há `delete`**). Model `Consulta`: `data` (dd/MM/yyyy), `horario` (`HH:mm?`), `veterinario`, `motivo`, `status` (enum).
-2. `lib/features/pet/data/api_consulta_repository.dart` via `/api/v1/pets/{petId}/appointments`. `data` ↔ `scheduledDate` (ISO), `horario` ↔ `scheduledTime` (`"HH:mm"` ou `HH:mm:ss` — normalizar), `motivo` ↔ `reason`, `veterinario` ↔ `veterinarian`, `status` ↔ enum via mapa.
-3. Regras de alerta (`consulta_alerta.dart`) **ficam no app**.
+Com a API, o Mongo gera o `_id` no `save()` — não dá pra "reservar" um id antes de
+existir o documento do mesmo jeito. Duas opções:
+
+- **A (recomendada — menor mudança):** `ApiHistoricoMedicoRepository.novoId(petId)` passa a
+  gerar um **UUID local** (pacote `uuid`, ou `DateTime.now().microsecondsSinceEpoch` +
+  random — não precisa ser um ObjectId válido). O backend aceita um campo opcional
+  `id` no `CreateHistoricoRequest`; se vier preenchido, usa **esse valor como `_id`** do
+  documento Mongo (Mongo aceita `_id` string arbitrário) em vez de gerar um `ObjectId`.
+  Assim o app continua com o mesmo fluxo (gera id → sobe anexo com o path baseado nele →
+  cria o registro com esse id) e nada muda nas telas.
+- **B (mais invasiva):** mudar o fluxo pra sempre criar o registro primeiro (sem anexos),
+  pegar o id que a API devolve, então subir os anexos e fazer um `PATCH` incluindo as
+  URLs. Evita `_id` client-side no backend, mas exige reescrever `historico_form_screen.dart`.
+
+Fica com a **opção A** a menos que surja um motivo forte pra B.
+
+### 5.1 Backend — módulo `medicalrecord`
+1. `medicalrecord/domain/MedicalRecord` (`@Document("medical_records")`): `id`, `petId` (indexado), `recordedAt` (LocalDate), `description`, `veterinarian`, `attachments` (`List<String>`, URLs Cloudinary), `origin` (enum `TUTOR`/`CLINIC`/`VETERINARIAN`/`IMPORT`, default `TUTOR` — novo campo do schema-alvo, sem equivalente na UI atual), timestamps.
+2. `MedicalRecordRepository` — `findByPetIdOrderByRecordedAtAsc(petId)`, `deleteByPetId(petId)`.
+3. `MedicalRecordService` — molde `VaccineService`. `create` aceita o `id` opcional do request (ver 5.0) — se vier, `new MedicalRecord(); record.setId(req.id())` antes de `save` (Spring Data respeita um `id` já setado — faz upsert em vez de insert).
+4. `MedicalRecordController` sob `/api/v1/pets/{petId}/medical-records`: `GET`, `POST` (201), `PATCH /{recordId}`, `DELETE /{recordId}` (204).
+5. Cascata em `PetService.delete`.
+6. `MedicalRecordControllerTest`: CRUD, `id` client-side respeitado, ordem, 404 cross-tenant, 400 sem obrigatórios, cascata.
+
+**Upload dos anexos:** continua **direto do app pro Cloudinary** (preset unsigned, como hoje) — a API só guarda as URLs recebidas. Upload assinado via backend é a FASE 10, não esta.
+
+### 5.2 App — `ApiHistoricoMedicoRepository`
+1. Interface: `watchHistorico(petId)`, `novoId(petId)` (ver 5.0 — vira geração local), `createHistorico`, `updateHistorico`, `deleteHistorico`. Model `HistoricoMedico`: `data` (dd/MM/yyyy), `descricao`, `veterinario?`, `anexos: List<String>`.
+2. `lib/features/pet/data/api_historico_medico_repository.dart` via `/api/v1/pets/{petId}/medical-records`, enviando `id` no `POST` (gerado por `novoId`). `data` ↔ `recordedAt` (ISO), `descricao` ↔ `description`, `veterinario` ↔ `veterinarian`, `anexos` ↔ `attachments`.
+3. Upload de anexo continua pelo `anexoRepositoryProvider` (Cloudinary) — nada muda aí.
 
 ### 5.3 App — providers + telas
-- `consulta_providers.dart`: flag `AppConfig.useApiForConsultas` (`USE_API_CONSULTAS` — adicionar em `app_config.dart`).
-- Telas `consulta_list_screen` / `consulta_form_screen`: `ref.invalidate(consultasProvider(petId))` após mutar; pull-to-refresh na lista.
+- `historico_medico_providers.dart`: flag `AppConfig.useApiForHistorico` (`USE_API_HISTORICO` — adicionar em `app_config.dart`).
+- Telas `historico_list_screen` / `historico_form_screen`: `ref.invalidate(historicoMedicoProvider(petId))` após mutar; pull-to-refresh na lista.
 
 ### 5.4 Fechar
 - `flutter analyze` limpo, `flutter test test/core/ test/features/pet/` verde, `mvn -B test` verde.
-- **e2e** (molde `e2e-fase6.js`): agendar/listar/editar/cancelar (via status) num pet migrado; 404 cross-tenant.
-- Commit, marcar FASE 7 no plano mestre e aqui. `USE_API_CONSULTAS` default off.
+- **e2e** (molde `e2e-fase7.js`): criar registro com `id` pré-gerado (confirmar que persiste com esse id), listar, editar, anexar uma URL fake, excluir; 404 cross-tenant.
+- Commit, marcar FASE 8 no plano mestre e aqui. `USE_API_HISTORICO` default off.
+
+Depois da FASE 8, as fases 6–8 (vacinas/consultas/histórico) estarão todas na API — sobra só
+QR/página pública (FASE 9) antes de mexer em upload assinado e nas Firestore Rules.
 
 ---
 

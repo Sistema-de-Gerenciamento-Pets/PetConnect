@@ -148,15 +148,18 @@ Verificado no Mongo: 0 pets sem `tutorId`, 0 locations sem `petId`, 2 usuários 
 
 ---
 
-## FASE 7 — feature **Consultas**
+## FASE 7 — feature **Consultas** — ✅ CONCLUÍDA
 
-> **Sem migração de dados** — `Pets/*/consultas` está vazio. Só API + troca de repositório.
+> **Sem migração de dados** — `Pets/*/consultas` estava vazio.
 
-- [ ] `GET/POST/PATCH /api/v1/pets/{petId}/appointments` (cancelar/realizar = `PATCH status`).
-- [ ] `ApiConsultaRepository` + flag. Enum do app pode continuar com 3 estados; DTO aceita o enum de 7 mas migração só usa 3.
-- [ ] Testar; comparar; corrigir.
+- [x] Backend módulo `appointment`: `GET/POST/PATCH /api/v1/pets/{petId}/appointments` (sem `DELETE` — cancelar/realizar = `PATCH status`, como já é a interface do app). Posse via `PetService.get`. `AppointmentStatus` com os 7 estados do schema-alvo; o app usa só `CONFIRMED`/`COMPLETED`/`CANCELLED`.
+- [x] Cascata em `PetService.delete`. `GlobalExceptionHandler` ganhou handlers de 405/404 para rota/método não mapeados (gap encontrado testando o "sem DELETE").
+- [x] App `ApiConsultaRepository` + flag `AppConfig.useApiForConsultas` (`USE_API_CONSULTAS`). Mapeia `HH:mm` ↔ `HH:mm:ss`, `dd/MM/yyyy` ↔ ISO, status PT ↔ enum de 7 (fallback `agendada`).
+- [x] `consulta_list_screen`: pull-to-refresh + invalidate ao marcar realizada/cancelar; `consulta_form_screen`: invalidate ao salvar.
+- [x] Testes: `AppointmentControllerTest` (8); `flutter analyze` limpo + 23 Dart. **Verificado e2e** num pet migrado: ordem cronológica, status default `CONFIRMED`, `PATCH` de status, edição sem status preserva o atual, 404 cross-tenant.
+- [ ] Teste no device — pendente do usuário.
 
-**Rollback:** flag off + drop.
+**Rollback:** `USE_API_CONSULTAS=false` (default) + `db.appointments.drop()`.
 
 ---
 
