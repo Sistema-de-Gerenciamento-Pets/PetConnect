@@ -178,22 +178,23 @@ Verificado no Mongo: 0 pets sem `tutorId`, 0 locations sem `petId`, 2 usuários 
 
 ---
 
-## FASE 9 — **QR Code** + página pública (RF17–RF19) — ✅ PARCIAL (API pronta; página/domínio pendentes)
+## FASE 9 — **QR Code** + página pública (RF17–RF19) — ✅ FECHADA (2026-09-11)
 
-Usuário optou por **"só local por enquanto"** (ver decisão abaixo): construir e validar os endpoints agora; a página pública em si e a URL real do QR ficam para quando houver hospedagem definida.
+Infraestrutura real no ar: MongoDB Atlas (M0), API no Render, página no Firebase Hosting — decisões e passo a passo em `docs/next-stage/02-infrastructure-decision.md`.
 
 - [x] `GET /api/v1/public/pets/{publicId}` — **sem autenticação**, DTO mínimo (`name`, `species`, `status`, `photoUrl`, `publicContactPhone`) — nunca `tutorId`/e-mail. Pet `ARCHIVED` ou `publicId` inexistente → 404.
 - [x] `POST /api/v1/public/pets/{publicId}/sightings` — relato anônimo (RF31), sem autenticação, grava `locations` com `source="PUBLIC_QR"`. Rate limiting adicionado na FASE 11 (10 escritas/min por IP).
 - [x] `GET/POST /api/v1/pets/{petId}/locations` (autenticado, RF32) — tutor vê o histórico completo (migrado + novo) e pode registrar avistamento manual com data passada.
 - [x] `SecurityConfig`/`FirebaseTokenAuthenticationFilter`: `/api/v1/public/**` liberado e nunca tenta validar token (um Bearer inválido não pode bloquear rota pública).
 - [x] Testes: `PublicPetControllerTest` (6), `LocationControllerTest` (5). **Verificado e2e sem nenhum token**: resumo público, 404 em id inexistente/arquivado, relato anônimo grava com `source=PUBLIC_QR`, tutor vê os avistamentos migrados + novos, cross-tenant → 404.
-- [ ] Página web pública (Spring MVC/Thymeleaf ou similar) em `https://<domínio>/p/{publicId}` — **pendente de hospedagem**.
-- [ ] Flutter: `publicPetUrl(pet)` passar a usar `pet.publicId` e o domínio real — **pendente da mesma decisão**.
-- [ ] QR regenerável (RF19 — trocar `publicId`) — ainda não implementado; avaliar se entra quando a página pública existir.
-- [ ] Rate limiting nos dois endpoints públicos antes de expor de verdade.
+- [x] **Página web pública** (`PetConnect/public/index.html`, estática, sem build) em `https://pet-connect-c53f1.web.app/pet/{publicId}` — bate exatamente com `publicPetUrl()` do app. Deploy via `firebase deploy --only hosting`.
+- [x] `publicPetUrl(pet)` já usava `pet.qrCodeId` (= `publicId` da API quando `USE_API_PETS`/`USE_API_LOCALIZACAO` ligadas) — nenhuma mudança necessária no app, só confirmado que bate.
+- [x] `CORS_ALLOWED_ORIGINS` no Render inclui o domínio do Hosting — sem isso o navegador bloqueia a chamada (achado real: o primeiro teste voltou 403 genérico do Spring Security CORS, não um 404 da aplicação — diagnosticado e corrigido).
+- [x] **Verificado de ponta a ponta com um pet real** (criado via API, apagado depois): página renderiza nome/espécie/status/contato corretamente; formulário de avistamento anônimo enviado **pela interface de verdade** (não só via curl) — resposta "Obrigado! O tutor foi avisado." confirmada, sem erro no console do navegador.
+- [ ] QR regenerável (RF19 — trocar `publicId`) — **nunca foi implementado, nem no legado nem na API** (não é regressão desta fase; ver `docs/validation/rf01-rf32-parity.md`). Backlog, fora do escopo desta migração.
 - [x] Migração: `publicId` já garantido em todos os pets desde a FASE 3.
 
-**Rollback:** remover `/api/v1/public/**` do `SecurityConfig`; `db.locations.deleteMany({legacyImport:false})` para limpar dados de teste.
+**Rollback:** remover `/api/v1/public/**` do `SecurityConfig`; `db.locations.deleteMany({legacyImport:false})` para limpar dados de teste; `firebase hosting:disable` pra tirar a página do ar sem afetar Auth/Firestore.
 
 ---
 
@@ -207,7 +208,7 @@ Usuário optou por **"só local por enquanto"** (ver decisão abaixo): construir
 - [x] **Verificado parcialmente e2e**: sem token → 401; com token mas sem `CLOUDINARY_API_KEY`/`CLOUDINARY_API_SECRET` configurados → 503 gracioso nos dois endpoints (não crasha, não vaza stack trace).
 - [ ] **Round-trip real contra o Cloudinary** (subir um arquivo assinado, confirmar no dashboard, excluir, confirmar que sumiu) — pendente da API Secret real do usuário.
 
-**Nota de segurança residual:** não há registro de "quem subiu qual arquivo" — qualquer usuário autenticado pode pedir a exclusão de qualquer URL do Cloudinary da conta (antes disso, *ninguém* conseguia excluir nada; agora pelo menos exige login). Uma tabela de posse de upload resolveria, mas é escopo maior que o previsto para esta fase — registrado como pendência.
+**Nota de segurança residual — ✅ RESOLVIDA na etapa seguinte** (ver `docs/next-stage/05-security-review.md`): a posse do arquivo agora é garantida por uma pasta assinada por tutor (`users/<tutorId>/...`) nos parâmetros da assinatura do Cloudinary — sem precisar de tabela própria de "quem subiu o quê". `DELETE /api/v1/uploads` de um arquivo fora da pasta do tutor autenticado responde 404. Testado (`UploadControllerTest`, 2 casos novos).
 
 **Rollback:** flag `USE_API_UPLOAD=false` (default) → volta ao `CloudinaryAnexoRepository` unsigned.
 
