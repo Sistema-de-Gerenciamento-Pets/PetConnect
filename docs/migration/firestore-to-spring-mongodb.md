@@ -197,14 +197,19 @@ Usuário optou por **"só local por enquanto"** (ver decisão abaixo): construir
 
 ---
 
-## FASE 10 — Upload/exclusão de imagem assinados via backend
+## FASE 10 — Upload/exclusão de imagem assinados via backend — ✅ CÓDIGO PRONTO (round-trip real pendente da credencial)
 
-- [ ] `POST /api/v1/uploads/signature` (ou proxy `POST /api/v1/uploads`) — backend assina requisição Cloudinary com API secret (env var).
-- [ ] `delete` deixa de ser no-op: `DELETE` via backend remove do Cloudinary.
-- [ ] `CloudinaryAnexoRepository` → `ApiAnexoRepository`. `cloudinary_config.dart` deixa de conter preset no app (fica só no backend).
-- [ ] Exclusão de conta/pet/histórico passa a limpar imagens órfãs.
+- [x] `POST /api/v1/uploads/signature` (assinatura — abordagem A do handoff) — backend assina com a API secret (env var `CLOUDINARY_API_SECRET`, `CloudinaryProperties`). Guardado: 503 `UPLOAD_NOT_CONFIGURED` enquanto a credencial não estiver setada (verificado — não derruba a API).
+- [x] `delete` deixa de ser no-op: `DELETE /api/v1/uploads {url}` assina e chama `destroy` no Cloudinary, extraindo `resourceType`/`publicId` da própria URL (`CloudinaryUrlParser`). Idempotente (loga e engole falha).
+- [x] `CloudinaryAnexoRepository` → `ApiAnexoRepository` (flag `USE_API_UPLOAD`, default off). `cloudinary_config.dart` no app mantém cloud name/preset (preset só é usado quando a flag está off).
+- [ ] Exclusão de conta/pet/histórico passa a chamar `delete()` nos anexos de fato (hoje o app já tenta, mas o repositório era no-op) — **conferir que os call sites usam o `anexoRepositoryProvider` certo** quando a flag estiver ligada.
+- [x] Testes: `CloudinarySignerTest` (4, vetores conferidos com Node), `CloudinaryUrlParserTest` (4), `UploadControllerTest` (5, `CloudinaryClient` mockado). App: `api_anexo_repository_test.dart` (2). Suíte backend 68/68.
+- [x] **Verificado parcialmente e2e**: sem token → 401; com token mas sem `CLOUDINARY_API_KEY`/`CLOUDINARY_API_SECRET` configurados → 503 gracioso nos dois endpoints (não crasha, não vaza stack trace).
+- [ ] **Round-trip real contra o Cloudinary** (subir um arquivo assinado, confirmar no dashboard, excluir, confirmar que sumiu) — pendente da API Secret real do usuário.
 
-**Rollback:** manter `CloudinaryAnexoRepository` unsigned enquanto o endpoint novo não estabiliza.
+**Nota de segurança residual:** não há registro de "quem subiu qual arquivo" — qualquer usuário autenticado pode pedir a exclusão de qualquer URL do Cloudinary da conta (antes disso, *ninguém* conseguia excluir nada; agora pelo menos exige login). Uma tabela de posse de upload resolveria, mas é escopo maior que o previsto para esta fase — registrado como pendência.
+
+**Rollback:** flag `USE_API_UPLOAD=false` (default) → volta ao `CloudinaryAnexoRepository` unsigned.
 
 ---
 
