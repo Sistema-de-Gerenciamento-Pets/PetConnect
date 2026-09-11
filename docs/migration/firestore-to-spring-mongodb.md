@@ -178,15 +178,22 @@ Verificado no Mongo: 0 pets sem `tutorId`, 0 locations sem `petId`, 2 usuários 
 
 ---
 
-## FASE 9 — **QR Code** + página pública (RF17–RF19)
+## FASE 9 — **QR Code** + página pública (RF17–RF19) — ✅ PARCIAL (API pronta; página/domínio pendentes)
 
-- [ ] `GET /api/v1/public/pets/{publicId}` — endpoint **sem autenticação**, retorna DTO mínimo (nome, foto, espécie, `status`, telefone de contato público) — nada sensível.
-- [ ] `POST /api/v1/public/pets/{publicId}/sightings` — relato anônimo de avistamento (RF31), rate-limited, grava `locations` com `source="PUBLIC_QR"`.
-- [ ] Página web pública (Spring MVC/Thymeleaf ou app estático) em `https://<dominio>/p/{publicId}`.
-- [ ] Flutter: `publicPetUrl(pet)` passa a usar `pet.publicId` e o domínio real; QR regenerável (RF19) troca `publicId`.
-- [ ] Migração: garantir `publicId` em todos os pets (feito na FASE 3).
+Usuário optou por **"só local por enquanto"** (ver decisão abaixo): construir e validar os endpoints agora; a página pública em si e a URL real do QR ficam para quando houver hospedagem definida.
 
-**Rollback:** remover rotas públicas; QR volta a apontar para URL antiga (que já não funcionava).
+- [x] `GET /api/v1/public/pets/{publicId}` — **sem autenticação**, DTO mínimo (`name`, `species`, `status`, `photoUrl`, `publicContactPhone`) — nunca `tutorId`/e-mail. Pet `ARCHIVED` ou `publicId` inexistente → 404.
+- [x] `POST /api/v1/public/pets/{publicId}/sightings` — relato anônimo (RF31), sem autenticação, grava `locations` com `source="PUBLIC_QR"`. **Sem rate limiting ainda** — anotado como pendente de endurecimento (FASE 11 ou antes de publicar de verdade).
+- [x] `GET/POST /api/v1/pets/{petId}/locations` (autenticado, RF32) — tutor vê o histórico completo (migrado + novo) e pode registrar avistamento manual com data passada.
+- [x] `SecurityConfig`/`FirebaseTokenAuthenticationFilter`: `/api/v1/public/**` liberado e nunca tenta validar token (um Bearer inválido não pode bloquear rota pública).
+- [x] Testes: `PublicPetControllerTest` (6), `LocationControllerTest` (5). **Verificado e2e sem nenhum token**: resumo público, 404 em id inexistente/arquivado, relato anônimo grava com `source=PUBLIC_QR`, tutor vê os avistamentos migrados + novos, cross-tenant → 404.
+- [ ] Página web pública (Spring MVC/Thymeleaf ou similar) em `https://<domínio>/p/{publicId}` — **pendente de hospedagem**.
+- [ ] Flutter: `publicPetUrl(pet)` passar a usar `pet.publicId` e o domínio real — **pendente da mesma decisão**.
+- [ ] QR regenerável (RF19 — trocar `publicId`) — ainda não implementado; avaliar se entra quando a página pública existir.
+- [ ] Rate limiting nos dois endpoints públicos antes de expor de verdade.
+- [x] Migração: `publicId` já garantido em todos os pets desde a FASE 3.
+
+**Rollback:** remover `/api/v1/public/**` do `SecurityConfig`; `db.locations.deleteMany({legacyImport:false})` para limpar dados de teste.
 
 ---
 
