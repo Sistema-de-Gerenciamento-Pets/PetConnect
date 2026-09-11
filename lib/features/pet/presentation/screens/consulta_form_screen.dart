@@ -97,6 +97,8 @@ class _ConsultaFormScreenState extends ConsumerState<ConsultaFormScreen> {
           ),
         );
       }
+      // A lista via API é uma emissão única — força o recarregamento.
+      ref.invalidate(consultasProvider(widget.petId));
       if (mounted) context.pop();
     } catch (_) {
       if (mounted) {

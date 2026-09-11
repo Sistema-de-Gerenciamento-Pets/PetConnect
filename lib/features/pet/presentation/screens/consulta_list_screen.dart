@@ -40,14 +40,24 @@ class ConsultaListScreen extends ConsumerWidget {
           ),
           data: (consultas) {
             if (consultas.isEmpty) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Text(
-                    'Nenhuma consulta agendada ainda.\nToque em "+" para agendar.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textMuted),
-                  ),
+              return RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(consultasProvider(petId));
+                  await ref.read(consultasProvider(petId).future);
+                },
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: const [
+                    SizedBox(height: 120),
+                    Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Text(
+                        'Nenhuma consulta agendada ainda.\nToque em "+" para agendar.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.textMuted),
+                      ),
+                    ),
+                  ],
                 ),
               );
             }
@@ -56,13 +66,20 @@ class ConsultaListScreen extends ConsumerWidget {
             final concluidas = consultas.where((c) => c.status == ConsultaStatus.realizada).toList();
             final canceladas = consultas.where((c) => c.status == ConsultaStatus.cancelada).toList();
 
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 96),
-              children: [
-                if (futuras.isNotEmpty) ..._secao(context, ref, 'Futuras', futuras),
-                if (concluidas.isNotEmpty) ..._secao(context, ref, 'Concluídas', concluidas),
-                if (canceladas.isNotEmpty) ..._secao(context, ref, 'Canceladas', canceladas),
-              ],
+            return RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(consultasProvider(petId));
+                await ref.read(consultasProvider(petId).future);
+              },
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 96),
+                children: [
+                  if (futuras.isNotEmpty) ..._secao(context, ref, 'Futuras', futuras),
+                  if (concluidas.isNotEmpty) ..._secao(context, ref, 'Concluídas', concluidas),
+                  if (canceladas.isNotEmpty) ..._secao(context, ref, 'Canceladas', canceladas),
+                ],
+              ),
             );
           },
         ),
@@ -85,11 +102,13 @@ class ConsultaListScreen extends ConsumerWidget {
               ? () => ref
                   .read(consultaRepositoryProvider)
                   .updateConsulta(petId, consulta.copyWith(status: ConsultaStatus.realizada))
+                  .then((_) => ref.invalidate(consultasProvider(petId)))
               : null,
           onCancelar: consulta.status == ConsultaStatus.agendada
               ? () => ref
                   .read(consultaRepositoryProvider)
                   .updateConsulta(petId, consulta.copyWith(status: ConsultaStatus.cancelada))
+                  .then((_) => ref.invalidate(consultasProvider(petId)))
               : null,
         ),
         const SizedBox(height: 12),

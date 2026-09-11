@@ -28,4 +28,7 @@ class AppConfig {
 
   /// FASE 6 — carteira de vacina via API.
   static const bool useApiForVacinas = bool.fromEnvironment('USE_API_VACINAS');
+
+  /// FASE 7 — consultas via API.
+  static const bool useApiForConsultas = bool.fromEnvironment('USE_API_CONSULTAS');
 }
