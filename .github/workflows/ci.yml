@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+# Evita rodar duas vezes o mesmo push (branch + PR) desperdiçando minutos.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flutter:
+    name: Flutter (format, analyze, testes)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.0"
+          channel: "stable"
+          cache: true
+
+      - name: flutter pub get
+        run: flutter pub get
+
+      - name: dart format (lib + test)
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: flutter analyze
+        run: flutter analyze
+
+      - name: flutter test (unit + widget — sem os que precisam de infra externa)
+        run: flutter test test/core/ test/features/pet/
