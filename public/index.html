@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PetConnect — Encontrei um pet</title>
+<meta name="robots" content="noindex" />
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f5f4f0;
+    --card: #ffffff;
+    --text: #2b2b28;
+    --muted: #767066;
+    --brand: #e07a3f;
+    --brand-dark: #c05f28;
+    --border: #e7e3da;
+    --error: #c0392b;
+    --success: #2f7d4f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px 48px;
+  }
+  .wrap { width: 100%; max-width: 420px; }
+  .logo {
+    text-align: center;
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--brand-dark);
+    margin-bottom: 20px;
+    letter-spacing: -0.02em;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.05);
+  }
+  .photo {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 16px;
+    object-fit: cover;
+    background: var(--border);
+    display: block;
+    margin-bottom: 16px;
+  }
+  .photo-placeholder {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 16px;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  .badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .badge-lost { background: #fde8e4; color: var(--error); }
+  .badge-found { background: #e4f3ea; color: var(--success); }
+  .badge-active { background: #eef1e4; color: #4c5c2f; }
+  .badge-other { background: var(--border); color: var(--muted); }
+  .meta { color: var(--muted); font-size: 15px; margin-bottom: 4px; }
+  .contact {
+    margin-top: 16px;
+    padding: 14px;
+    background: #fbf3ec;
+    border-radius: 12px;
+    font-size: 15px;
+  }
+  .contact a { color: var(--brand-dark); font-weight: 700; text-decoration: none; }
+  .section-title { font-weight: 700; font-size: 16px; margin: 24px 0 10px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin: 12px 0 4px; }
+  textarea, input[type=text] {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 15px;
+    font-family: inherit;
+    resize: vertical;
+    background: #fff;
+    color: var(--text);
+  }
+  textarea:focus, input[type=text]:focus { outline: 2px solid var(--brand); border-color: var(--brand); }
+  .geo-row { display: flex; align-items: center; gap: 8px; margin: 12px 0 4px; font-size: 13px; color: var(--muted); }
+  button {
+    width: 100%;
+    margin-top: 18px;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    background: var(--brand);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  button:disabled { background: #d9c8ba; cursor: default; }
+  button:not(:disabled):active { background: var(--brand-dark); }
+  .msg { text-align: center; padding: 40px 8px; }
+  .msg .icon { font-size: 40px; margin-bottom: 12px; }
+  .msg p { color: var(--muted); font-size: 15px; line-height: 1.5; }
+  .feedback { margin-top: 14px; font-size: 14px; text-align: center; }
+  .feedback.error { color: var(--error); }
+  .feedback.success { color: var(--success); font-weight: 600; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 24px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="logo">🐾 PetConnect</div>
+    <div class="card" id="card">
+      <div class="msg"><p>Carregando…</p></div>
+    </div>
+    <footer>Achou este pet? Preencha o formulário acima para avisar o tutor.</footer>
+  </div>
+
+<script>
+(function () {
+  // Ajustar aqui se a URL da API hospedada mudar.
+  var API_BASE_URL = 'https://petconnect-api-rxr9.onrender.com';
+
+  var STATUS_LABEL = {
+    ACTIVE: { text: 'Cadastrado', cls: 'badge-active' },
+    LOST: { text: 'Perdido', cls: 'badge-lost' },
+    FOUND: { text: 'Encontrado', cls: 'badge-found' },
+    DECEASED: { text: 'Falecido', cls: 'badge-other' }
+  };
+  var SPECIES_LABEL = { DOG: 'Cachorro', CAT: 'Gato', OTHER: 'Outro' };
+
+  function el(html) {
+    var t = document.createElement('template');
+    t.innerHTML = html.trim();
+    return t.content.firstChild;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function getPublicId() {
+    var m = window.location.pathname.match(/\/pet\/([^/]+)/);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  function renderLanding(card) {
+    card.innerHTML = '';
+    card.appendChild(el(
+      '<div class="msg">' +
+        '<div class="icon">📷</div>' +
+        '<p>Esta página abre quando você escaneia a coleira/QR code de um pet cadastrado no PetConnect.</p>' +
+      '</div>'
+    ));
+  }
+
+  function renderNotFound(card) {
+    card.innerHTML = '';
+    card.appendChild(el(
+      '<div class="msg">' +
+        '<div class="icon">🐾</div>' +
+        '<p>Não encontramos esse pet. O QR code pode ter sido desativado pelo tutor.</p>' +
+      '</div>'
+    ));
+  }
+
+  function renderError(card) {
+    card.innerHTML = '';
+    card.appendChild(el(
+      '<div class="msg">' +
+        '<div class="icon">⚠️</div>' +
+        '<p>Não foi possível carregar as informações agora. Tente novamente em instantes.</p>' +
+      '</div>'
+    ));
+  }
+
+  function renderPet(card, pet, publicId) {
+    var statusInfo = STATUS_LABEL[pet.status] || { text: pet.status || '', cls: 'badge-other' };
+    var speciesLabel = SPECIES_LABEL[pet.species] || pet.species || '';
+
+    card.innerHTML = '';
+
+    if (pet.photoUrl) {
+      card.appendChild(el('<img class="photo" src="' + escapeHtml(pet.photoUrl) + '" alt="Foto de ' + escapeHtml(pet.name) + '">'));
+    } else {
+      card.appendChild(el('<div class="photo-placeholder">🐾</div>'));
+    }
+
+    card.appendChild(el('<span class="badge ' + statusInfo.cls + '">' + escapeHtml(statusInfo.text) + '</span>'));
+    card.appendChild(el('<h1>' + escapeHtml(pet.name || 'Pet') + '</h1>'));
+    if (speciesLabel) card.appendChild(el('<div class="meta">' + escapeHtml(speciesLabel) + '</div>'));
+
+    if (pet.publicContactPhone) {
+      card.appendChild(el(
+        '<div class="contact">📞 Contato do tutor: <a href="tel:' + escapeHtml(pet.publicContactPhone) + '">' +
+        escapeHtml(pet.publicContactPhone) + '</a></div>'
+      ));
+    }
+
+    card.appendChild(el('<div class="section-title">Encontrou este pet?</div>'));
+
+    var form = el(
+      '<form>' +
+        '<label for="desc">Onde você viu? (opcional)</label>' +
+        '<textarea id="desc" rows="3" maxlength="1000" placeholder="Ex: perto da praça, andando sozinho"></textarea>' +
+        '<div class="geo-row"><input type="checkbox" id="geo" checked><label for="geo" style="margin:0;font-weight:400;">Incluir minha localização atual</label></div>' +
+        '<label for="contact">Seu contato (opcional, caso o tutor queira falar com você)</label>' +
+        '<input type="text" id="contact" maxlength="120" placeholder="Telefone ou nome">' +
+        '<button type="submit">Avisar o tutor</button>' +
+        '<div class="feedback" id="feedback"></div>' +
+      '</form>'
+    );
+    card.appendChild(form);
+
+    form.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      submitSighting(publicId, form);
+    });
+  }
+
+  function submitSighting(publicId, form) {
+    var button = form.querySelector('button');
+    var feedback = form.querySelector('#feedback');
+    var useGeo = form.querySelector('#geo').checked;
+    var description = form.querySelector('#desc').value.trim();
+    var contact = form.querySelector('#contact').value.trim();
+
+    button.disabled = true;
+    feedback.className = 'feedback';
+    feedback.textContent = 'Enviando…';
+
+    function send(lat, lng) {
+      var body = {};
+      if (description) body.description = description;
+      if (contact) body.reporterContact = contact;
+      if (lat != null) body.latitude = lat;
+      if (lng != null) body.longitude = lng;
+
+      fetch(API_BASE_URL + '/api/v1/public/pets/' + encodeURIComponent(publicId) + '/sightings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      }).then(function (res) {
+        if (res.status === 201) {
+          feedback.className = 'feedback success';
+          feedback.textContent = 'Obrigado! O tutor foi avisado.';
+          form.querySelectorAll('textarea, input').forEach(function (f) { f.disabled = true; });
+        } else if (res.status === 429) {
+          feedback.className = 'feedback error';
+          feedback.textContent = 'Muitas tentativas. Aguarde um instante e tente de novo.';
+          button.disabled = false;
+        } else if (res.status === 404) {
+          feedback.className = 'feedback error';
+          feedback.textContent = 'Este pet não está mais disponível.';
+        } else {
+          feedback.className = 'feedback error';
+          feedback.textContent = 'Não foi possível enviar agora. Tente novamente.';
+          button.disabled = false;
+        }
+      }).catch(function () {
+        feedback.className = 'feedback error';
+        feedback.textContent = 'Sem conexão. Verifique sua internet e tente de novo.';
+        button.disabled = false;
+      });
+    }
+
+    if (useGeo && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function (pos) { send(pos.coords.latitude, pos.coords.longitude); },
+        function () { send(null, null); },
+        { timeout: 5000 }
+      );
+    } else {
+      send(null, null);
+    }
+  }
+
+  function init() {
+    var card = document.getElementById('card');
+    var publicId = getPublicId();
+
+    if (!publicId) {
+      renderLanding(card);
+      return;
+    }
+
+    fetch(API_BASE_URL + '/api/v1/public/pets/' + encodeURIComponent(publicId))
+      .then(function (res) {
+        if (res.status === 404) { renderNotFound(card); return null; }
+        if (!res.ok) { renderError(card); return null; }
+        return res.json();
+      })
+      .then(function (pet) {
+        if (pet) renderPet(card, pet, publicId);
+      })
+      .catch(function () { renderError(card); });
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
