@@ -104,17 +104,19 @@ Verificado no Mongo: 0 pets sem `tutorId`, 0 locations sem `petId`, 2 usuários 
 
 ---
 
-## FASE 4 — Feature **Tutor** no app via API
+## FASE 4 — Feature **Tutor** no app via API — ✅ CONCLUÍDA
 
-- [ ] `ApiUsuarioRepository implements UsuarioRepository` usando `http` + base URL por ambiente + interceptor que anexa o Firebase ID Token.
-- [ ] Endpoints: `GET /me`, `PATCH /me`, `DELETE /me` (soft delete + cascata no servidor).
-- [ ] Feature flag `useApiForUsuario` (config/`--dart-define`) alterna `firebaseUsuarioRepositoryProvider` ↔ `apiUsuarioRepositoryProvider`.
-- [ ] `signIn/signUp/sendPasswordReset/signOut` **continuam no Firebase Auth** — só o *perfil* (doc do usuário) passa a vir da API. No `signUp`, após criar no Auth, chamar `GET /me` (provisiona no Mongo).
-- [ ] Telas afetadas: cadastro, home (saudação), configurações, editar-perfil.
-- [ ] Testar contra staging; comparar com versão Firestore; corrigir.
-- [ ] `currentUsuarioProvider` passa a combinar `authStateChanges` (Firebase) + `GET /me` (API) em vez do doc Firestore.
+- [x] `ApiUsuarioRepository implements UsuarioRepository` (`lib/features/usuario/data/`) usando `ApiClient` (`lib/core/network/`) — prefixo `/api/v1`, `Authorization: Bearer <Firebase ID Token>`, envelope de erro → `ApiException`.
+- [x] `GET /me` · `PATCH /me` · `DELETE /me` no backend. `DELETE`: cascata de pets + localizações, soft-delete de `users` (`deletedAt`), remoção do usuário no Firebase Auth via Admin SDK. `resolve()` recusa (401) conta já excluída mesmo com token válido.
+- [x] Feature flag `AppConfig.useApiForUsuario` (`--dart-define=USE_API_USUARIO=true`, default **off**). `usuarioRepositoryProvider` alterna Api ↔ Firebase.
+- [x] `signIn/signUp/sendPasswordReset/signOut` continuam no Firebase Auth. No `signUp`: cria no Auth → `GET /me` (provisiona no Mongo) → `PATCH /me` com nome/telefone.
+- [x] Mapeamento `dd/MM/yyyy` ↔ ISO `yyyy-MM-dd`; `genero` Homem/Mulher/Outro ↔ `MALE/FEMALE/OTHER`.
+- [x] `editar_perfil_screen` invalida `currentUsuarioProvider` após salvar (fonte via API é emissão única).
+- [x] Testes: `test/core/api_client_test.dart` (6) + backend `MeControllerTest` (7). `flutter analyze` limpo, suíte de pets ok.
+- [x] **Verificado end-to-end** (token real do Firebase): `GET` provisiona, `PATCH` atualiza, `DELETE` faz cascata (0 pets / 0 locations / user soft-deleted) + remove do Auth, `GET` seguinte → 401. Dados migrados intactos (11/21/64).
+- [ ] Teste no device com a flag ligada apontando para a API (ver `handoff.md`) — pendente do usuário.
 
-**Rollback:** flag `useApiForUsuario=false` → volta ao `FirebaseUsuarioRepository`.
+**Rollback:** flag `USE_API_USUARIO=false` (default) → volta ao `FirebaseUsuarioRepository`.
 
 ---
 
