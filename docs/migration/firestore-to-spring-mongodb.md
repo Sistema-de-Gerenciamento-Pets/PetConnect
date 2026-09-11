@@ -163,16 +163,18 @@ Verificado no Mongo: 0 pets sem `tutorId`, 0 locations sem `petId`, 2 usuários 
 
 ---
 
-## FASE 8 — feature **Histórico Médico**
+## FASE 8 — feature **Histórico Médico** — ✅ CONCLUÍDA
 
-> **Sem migração de dados** — `Pets/*/historicoMedico` está vazio. Só API + troca de repositório.
+> **Sem migração de dados** — `Pets/*/historicoMedico` estava vazio.
 
-- [ ] `GET/POST/PATCH/DELETE /api/v1/pets/{petId}/medical-records`.
-- [ ] Upload de anexo: **por enquanto continua unsigned direto do app pro Cloudinary**; a API só guarda a URL. (Upload assinado = FASE 10.)
-- [ ] `ApiHistoricoMedicoRepository` + flag. `novoId` do client deixa de ser necessário (id vem da API na criação; anexos podem subir e a URL ser enviada no POST).
-- [ ] Testar; comparar; corrigir.
+- [x] Backend módulo `medicalrecord`: `GET/POST/PATCH/DELETE /api/v1/pets/{petId}/medical-records`. `origin` (enum `TUTOR`/`CLINIC`/`VETERINARIAN`/`IMPORT`, default `TUTOR`).
+- [x] Upload de anexo: continua unsigned direto do app pro Cloudinary (upload assinado fica pra FASE 10); a API só guarda as URLs.
+- [x] `ApiHistoricoMedicoRepository` + flag `USE_API_HISTORICO`. **`novoId` foi mantido** (ao contrário do que a versão anterior deste plano cogitava) — o app continua gerando o id **antes** de existir o registro (os anexos sobem pro Cloudinary usando esse id no path); agora é um id local (16 bytes aleatórios em hex, sem rede) enviado no `POST`, e o backend o usa como `_id` do Mongo quando presente (id duplicado → 409; `PATCH` ignora o campo `id` do corpo, usa o da URL).
+- [x] Cascata em `PetService.delete`.
+- [x] Testes: `MedicalRecordControllerTest` (9); `flutter analyze` limpo + 23 Dart. **Verificado e2e**: `POST` com id pré-gerado persiste com esse id, duplicata → 409, `PATCH` preserva o id, `DELETE`, 404 cross-tenant.
+- [ ] Teste no device — pendente do usuário.
 
-**Rollback:** flag off + drop.
+**Rollback:** `USE_API_HISTORICO=false` (default) + `db.medical_records.drop()`.
 
 ---
 
