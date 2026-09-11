@@ -96,7 +96,10 @@ temporariamente e apagar depois).
 ## 3. Fatos e armadilhas
 
 - **Loopback / NIO Selector:** nesta máquina `Selector.open()` falha (`Unable to establish loopback connection`, AF_UNIX). Quebra (a) init do `firebase-admin` — contornado com `NetHttpTransport` no `FirebaseConfig` — e (b) start do Tomcat — contornado rodando a API em **container Linux** (`CloudinaryHttpClient` também usa `SimpleClientHttpRequestFactory` por cautela, embora dentro do container isso não seja necessário). `flutter run` para device **funciona** (só o APK de release e servidor Java direto no Windows são afetados). Também quebra o **Firestore Emulator** (é Java) — só o **Auth Emulator** (Node.js) funciona sem contorno nesta máquina.
-- **`flutter test --platform=chrome` não funciona nesta máquina (achado na FASE 12):** falha mesmo num smoke test trivial, sem relação com nenhum teste específico — `Connection closed before test suite loaded.`, às vezes trava sem erro nenhum por vários minutos (CPU do processo Dart fica parada, não é só lento). O harness de teste em navegador do Dart também abre um socket de loopback local pro Chrome se conectar de volta, e parece esbarrar na mesma limitação de rede da máquina. Não tem workaround conhecido ainda (rodar dentro de um container Linux, como fizemos com a API, é o caminho óbvio mas não foi tentado — esforço maior que o valor pra uma única sessão). Efeito prático: `auth_flow_test.dart` (reescrito na FASE 12 contra o Auth Emulator + API real) não pôde ser **executado** nesta máquina pra confirmar que passa — só a lógica foi revisada e as peças (emulador sozinho, e token do emulador aceito pela API via curl) foram validadas isoladamente. Falta rodar em outra máquina ou num CI (Linux, sem esse bug).
+- **`flutter test --platform=chrome` não funciona direto nesta máquina (achado na FASE 12):** falha mesmo num smoke test trivial, sem relação com nenhum teste específico — `Connection closed before test suite loaded.`, às vezes trava sem erro nenhum por vários minutos (CPU do processo Dart fica parada, não é só lento). Mesma família do bug de loopback do Windows.
+  - **Tentativa de contorno via container Linux (`tool/web-test/Dockerfile`):** resolve o travamento acima — Flutter+Chrome dentro de um container Ubuntu compilam e o teste chega a carregar no navegador (progresso real, confirmado). Achado no caminho: o Chrome trava silenciosamente sem `--no-sandbox --disable-dev-shm-usage` (sandbox do Chrome precisa de privilégios de namespace que o container não tem por padrão) — corrigido com um wrapper (`CHROME_EXECUTABLE=/usr/local/bin/chrome-no-sandbox`) que já está no Dockerfile.
+  - **Novo bloqueio, ainda sem solução:** com o sandbox corrigido, `setUpAll` (que faz `Firebase.initializeApp` + `useAuthEmulator`) trava até o timeout de 12 minutos do próprio `flutter test`, sem lançar nenhuma exceção — mesmo com conectividade container→host confirmada por `curl` (a `curl http://host.docker.internal:9099/...` de dentro do mesmo container responde 200 normalmente). Ou seja, o `curl` bruto funciona, mas o SDK JS do Firebase dentro do Chrome fica pendurado — suspeita (não confirmada) é o SDK do Firebase Auth para Web esperando por algo relacionado a `IndexedDB`/armazenamento persistente que se comporta diferente num Chrome rodando `--no-sandbox` como root sem perfil normal. Não investigado mais a fundo — diminishing returns pra uma sessão.
+  - **Conclusão prática:** o `Dockerfile` fica no repo (é progresso real e documentado, não descartado), mas `auth_flow_test.dart` continua **não executado com sucesso** em lugar nenhum ainda. O caminho mais provável de dar certo sem mais esforço de infra: **CI real (GitHub Actions, `ubuntu-latest`)** — milhares de projetos Flutter rodam `flutter test --platform=chrome` exatamente assim, sem as camadas extras de container-dentro-de-container que este contorno precisou empilhar.
 - **Portas:** 8080/27017 do host costumam estar ocupadas → API em **8090**, Mongo em **27018**.
 - **Firebase Storage morto** (billing encerrado): 18 imagens legadas viraram `photoUrl: null` + aviso `storage-image-lost`. Só sobrevivem URLs Cloudinary (2 users, 3 pets).
 - **Credencial Firebase:** `C:\Users\Aleksander\Documents\pet-connect-c53f1-firebase-adminsdk-t8ctg-326661da99.json` (fora dos repos). Montada read-only no container via `.env` (`FIREBASE_SA_PATH`).
@@ -241,15 +244,22 @@ verdade a cada rodada (por isso fora do CI). Agora:
    /api/v1/me` removeu — confirmado via `curl`, não só lido no código do Admin SDK.
 3. `flutter analyze` no arquivo reescrito: sem problemas.
 
-**Não validado — achado novo, documentado na seção 3:** `flutter test --platform=chrome` não
-roda nesta máquina, nem para um smoke test trivial sem nenhuma relação com este arquivo
-(`Connection closed before test suite loaded.`, ou trava minutos sem erro). Mesma família do
-bug de loopback que já quebrava o Tomcat/Firestore Emulator direto no Windows — só que este
-processo não é Java, então é uma manifestação nova, não coberta pelo contorno existente
-(rodar em container Linux). **Ação:** reverti tudo que toquei pra estado normal (parei o Auth
-Emulator, tirei `FIREBASE_AUTH_EMULATOR_HOST` do container — confirmado que a API voltou a
-aceitar token real) antes de encerrar. O teste em si está pronto e a lógica foi validada peça
-por peça; falta só confirmar rodando de verdade, em outra máquina ou (melhor) num CI Linux.
+**Não validado — tentado o contorno via container, chegou mais longe mas ainda não passa**
+(detalhe completo na seção 3): `flutter test --platform=chrome` não roda direto nesta máquina
+(mesma família do bug de loopback do Windows). Tentei o contorno óbvio — rodar dentro de um
+container Linux, como já fizemos pra API — em `tool/web-test/Dockerfile`: resolve o
+travamento original (Flutter+Chrome compilam e o navegador abre), achou e corrigiu um
+problema real no caminho (sandbox do Chrome precisa de `--no-sandbox` dentro de container),
+mas esbarrou num novo bloqueio — `setUpAll` trava 12 minutos sem erro, com conectividade
+container→host confirmada por `curl` mas o SDK JS do Firebase preso em algo (suspeita:
+IndexedDB/storage num Chrome `--no-sandbox` como root). Não investigado mais a fundo.
+**Ação:** reverti tudo que toquei pra estado normal (parei o Auth Emulator, tirei
+`FIREBASE_AUTH_EMULATOR_HOST` do container — confirmado que a API voltou a aceitar token
+real) antes de encerrar; o `Dockerfile` fica no repo como progresso real documentado, não
+descartado. O teste em si está pronto e a lógica foi validada peça por peça; falta confirmar
+rodando de verdade — o caminho mais provável de dar certo é um CI real (GitHub Actions
+`ubuntu-latest`), sem as camadas de container-dentro-de-container que o contorno local
+precisou empilhar.
 
 ### 6.3 O que falta (fora do meu alcance sozinho)
 1. **E2E por feature contra staging** — não há staging hoje (depende de hospedagem, já listado

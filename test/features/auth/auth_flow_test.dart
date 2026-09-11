@@ -33,18 +33,23 @@
 // criado (usuário no emulador + perfil no Mongo local) é apagado no
 // tearDown, e nada disso é infraestrutura de produção.
 //
-// NÃO VERIFICADO nesta máquina (2026-09-11): `flutter test --platform=chrome`
-// falha aqui mesmo para um smoke test trivial sem nada deste arquivo
-// envolvido ("Connection closed before test suite loaded.", às vezes trava
-// sem erro nenhum) — o harness do Dart pra testes em navegador também
-// precisa de um socket de loopback local, e esbarra na mesma limitação de
-// rede desta máquina que já quebra o Tomcat direto e o Firestore Emulator
-// (ver handoff.md, seção 3). A lógica do teste (auth via emulador + perfil
-// via API, ambos já validados isoladamente nesta sessão: emulador sozinho
-// funciona, e um token dele foi aceito de ponta a ponta por `GET/DELETE
-// /api/v1/me` via curl) não pôde ser confirmada rodando de fato — falta
-// rodar numa outra máquina ou, melhor, plugar num CI (roda em Linux, onde
-// esse bug de loopback não existe).
+// NÃO EXECUTADO COM SUCESSO ainda (2026-09-11) — nem direto nesta máquina
+// (mesmo bug de loopback do Windows que quebra o Tomcat/Firestore Emulator,
+// ver handoff.md seção 3) nem via o contorno em container Linux
+// (tool/web-test/Dockerfile): esse contorno resolve o travamento original e
+// chega a compilar e abrir o Chrome, mas trava 12min em `setUpAll`
+// (Firebase.initializeApp + useAuthEmulator) sem lançar exceção — mesmo com
+// conectividade container→host confirmada via curl (suspeita não confirmada:
+// SDK JS do Firebase Auth preso em algo de IndexedDB/storage num Chrome
+// --no-sandbox como root). Detalhe completo no handoff.md, seção 3.
+//
+// A lógica do teste (auth via emulador + perfil via API) foi validada peça
+// por peça, fora do harness de teste em navegador: o Auth Emulator sobe e
+// responde nesta máquina, e um token emitido por ele foi aceito de ponta a
+// ponta pela API real via curl (`GET`/`DELETE /api/v1/me`). Falta confirmar
+// rodando de fato — o caminho mais provável de funcionar sem mais esforço de
+// infra é um CI real (GitHub Actions `ubuntu-latest`, sem as camadas de
+// container-dentro-de-container que o contorno local precisou empilhar).
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -55,6 +60,12 @@ import 'package:pet_connect/app.dart';
 import 'package:pet_connect/firebase_options.dart';
 
 const _apiBaseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8090');
+
+// 'localhost' funciona rodando `flutter test` direto no host; dentro do
+// container de tool/web-test/Dockerfile (contorno do bug de loopback desta
+// máquina), o Auth Emulator está no HOST, não no container — por isso
+// configurável via --dart-define=AUTH_EMULATOR_HOST=host.docker.internal.
+const _authEmulatorHost = String.fromEnvironment('AUTH_EMULATOR_HOST', defaultValue: 'localhost');
 
 void main() {
   final timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -68,7 +79,7 @@ void main() {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     // A partir daqui, todo signIn/signUp/signOut do FirebaseAuth.instance
     // fala com o emulador local — nunca com o projeto real.
-    await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
+    await FirebaseAuth.instance.useAuthEmulator(_authEmulatorHost, 9099);
   });
 
   tearDownAll(() async {
