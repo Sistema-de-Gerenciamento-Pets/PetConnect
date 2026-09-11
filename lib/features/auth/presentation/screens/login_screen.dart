@@ -185,6 +185,7 @@ class _LoginCard extends StatelessWidget {
                       : Icons.visibility_outlined,
                   color: AppColors.textMuted,
                 ),
+                tooltip: senhaVisivel ? 'Ocultar senha' : 'Mostrar senha',
                 onPressed: onToggleSenhaVisivel,
               ),
             ),

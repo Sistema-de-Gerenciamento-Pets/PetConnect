@@ -168,6 +168,8 @@ class _CadastroScreenState extends ConsumerState<CadastroScreen> {
                                 color: AppColors.textMuted,
                                 size: 20,
                               ),
+                              tooltip:
+                                  _senhaVisivel ? 'Ocultar senha' : 'Mostrar senha',
                               onPressed: () => setState(
                                   () => _senhaVisivel = !_senhaVisivel),
                             ),
@@ -190,6 +192,9 @@ class _CadastroScreenState extends ConsumerState<CadastroScreen> {
                                 color: AppColors.textMuted,
                                 size: 20,
                               ),
+                              tooltip: _confirmarSenhaVisivel
+                                  ? 'Ocultar senha'
+                                  : 'Mostrar senha',
                               onPressed: () => setState(() =>
                                   _confirmarSenhaVisivel =
                                       !_confirmarSenhaVisivel),
