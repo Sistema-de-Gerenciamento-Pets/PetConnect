@@ -66,6 +66,8 @@ class _LocalizacaoFormScreenState extends ConsumerState<LocalizacaoFormScreen> {
               contatoReportante: _contatoController.text.trim(),
             ),
           );
+      // A lista via API é uma emissão única — força o recarregamento.
+      ref.invalidate(localizacoesProvider(widget.petId));
       if (mounted) context.pop();
     } catch (_) {
       if (mounted) {

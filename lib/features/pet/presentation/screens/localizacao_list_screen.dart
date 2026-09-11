@@ -37,24 +37,40 @@ class LocalizacaoListScreen extends ConsumerWidget {
             child: Text('Não foi possível carregar os registros.', style: TextStyle(color: AppColors.error)),
           ),
           data: (localizacoes) {
+            Future<void> atualizar() async {
+              ref.invalidate(localizacoesProvider(petId));
+              await ref.read(localizacoesProvider(petId).future);
+            }
+
             if (localizacoes.isEmpty) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Text(
-                    'Nenhum avistamento registrado ainda.\nToque em "+" para registrar um.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textMuted),
-                  ),
+              return RefreshIndicator(
+                onRefresh: atualizar,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: const [
+                    SizedBox(height: 120),
+                    Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Text(
+                        'Nenhum avistamento registrado ainda.\nToque em "+" para registrar um.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: AppColors.textMuted),
+                      ),
+                    ),
+                  ],
                 ),
               );
             }
 
-            return ListView.separated(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 96),
-              itemCount: localizacoes.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) => LocalizacaoTile(localizacao: localizacoes[index]),
+            return RefreshIndicator(
+              onRefresh: atualizar,
+              child: ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 96),
+                itemCount: localizacoes.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, index) => LocalizacaoTile(localizacao: localizacoes[index]),
+              ),
             );
           },
         ),

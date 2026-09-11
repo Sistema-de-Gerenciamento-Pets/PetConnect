@@ -34,4 +34,7 @@ class AppConfig {
 
   /// FASE 8 — histórico médico via API.
   static const bool useApiForHistorico = bool.fromEnvironment('USE_API_HISTORICO');
+
+  /// FASE 9 — avistamentos (RF31/32) via API.
+  static const bool useApiForLocalizacao = bool.fromEnvironment('USE_API_LOCALIZACAO');
 }
