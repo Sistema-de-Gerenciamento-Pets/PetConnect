@@ -33,6 +33,11 @@ class ApiAnexoRepository implements AnexoRepository {
       ..fields['api_key'] = sig['apiKey'] as String
       ..fields['timestamp'] = sig['timestamp'].toString()
       ..fields['signature'] = sig['signature'] as String
+      // 'folder' faz parte dos parâmetros assinados pela API (não é só
+      // organização) — é como o servidor confirma posse na hora de
+      // excluir depois; se não mandar exatamente esse valor, o Cloudinary
+      // rejeita por assinatura inválida.
+      ..fields['folder'] = sig['folder'] as String
       ..files.add(http.MultipartFile.fromBytes('file', bytes,
           filename: path.split('/').last));
 

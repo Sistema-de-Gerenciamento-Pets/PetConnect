@@ -22,7 +22,8 @@ void main() {
             'signature': 'sig123',
             'timestamp': 1700000000,
             'apiKey': 'key1',
-            'cloudName': 'cloudx'
+            'cloudName': 'cloudx',
+            'folder': 'users/tutor-1',
           }),
           200,
           headers: {'content-type': 'application/json'},
@@ -66,6 +67,8 @@ void main() {
     expect(body, contains('1700000000'));
     expect(body, contains('name="signature"'));
     expect(body, contains('sig123'));
+    expect(body, contains('name="folder"'));
+    expect(body, contains('users/tutor-1'));
     expect(body, contains('name="file"'));
   });
 
