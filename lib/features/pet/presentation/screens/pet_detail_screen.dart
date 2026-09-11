@@ -42,6 +42,7 @@ class PetDetailScreen extends ConsumerWidget {
     if (confirmou != true) return;
 
     await ref.read(petRepositoryProvider).deletePet(pet.id);
+    ref.invalidate(petsProvider);
     if (context.mounted) context.pop();
   }
 

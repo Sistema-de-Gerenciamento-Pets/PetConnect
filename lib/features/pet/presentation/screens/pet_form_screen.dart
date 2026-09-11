@@ -146,7 +146,10 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
           vacinado: _vacinado,
           foto: _foto,
         ));
+        ref.invalidate(petProvider(existing.id));
       }
+      // A lista via API é uma emissão única — força o recarregamento.
+      ref.invalidate(petsProvider);
       if (mounted) context.pop();
     } catch (_) {
       if (mounted) {

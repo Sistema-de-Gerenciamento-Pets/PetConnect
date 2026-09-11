@@ -111,31 +111,47 @@ class HomeScreen extends ConsumerWidget {
                           ),
                         ),
                         data: (pets) {
+                          Future<void> atualizar() async {
+                            ref.invalidate(petsProvider);
+                            await ref.read(petsProvider.future);
+                          }
+
                           if (pets.isEmpty) {
-                            return const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(24),
-                                child: Text(
-                                  'Você ainda não cadastrou nenhum pet.\nToque em "Adicionar Novo Pet" para começar.',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: AppColors.textMuted),
-                                ),
+                            return RefreshIndicator(
+                              onRefresh: atualizar,
+                              child: ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: const [
+                                  SizedBox(height: 120),
+                                  Padding(
+                                    padding: EdgeInsets.all(24),
+                                    child: Text(
+                                      'Você ainda não cadastrou nenhum pet.\nToque em "Adicionar Novo Pet" para começar.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(color: AppColors.textMuted),
+                                    ),
+                                  ),
+                                ],
                               ),
                             );
                           }
 
-                          return ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                            itemCount: pets.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 12),
-                            itemBuilder: (context, index) {
-                              final pet = pets[index];
-                              return PetCard(
-                                pet: pet,
-                                colorIndex: index,
-                                onTap: () => context.push('/pet/${pet.id}'),
-                              );
-                            },
+                          return RefreshIndicator(
+                            onRefresh: atualizar,
+                            child: ListView.separated(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                              itemCount: pets.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: 12),
+                              itemBuilder: (context, index) {
+                                final pet = pets[index];
+                                return PetCard(
+                                  pet: pet,
+                                  colorIndex: index,
+                                  onTap: () => context.push('/pet/${pet.id}'),
+                                );
+                              },
+                            ),
                           );
                         },
                       ),
