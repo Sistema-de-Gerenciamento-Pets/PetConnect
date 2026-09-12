@@ -198,15 +198,16 @@ Infraestrutura real no ar: MongoDB Atlas (M0), API no Render, página no Firebas
 
 ---
 
-## FASE 10 — Upload/exclusão de imagem assinados via backend — ✅ CÓDIGO PRONTO (round-trip real pendente da credencial)
+## FASE 10 — Upload/exclusão de imagem assinados via backend — ✅ FECHADA (2026-09-12)
 
 - [x] `POST /api/v1/uploads/signature` (assinatura — abordagem A do handoff) — backend assina com a API secret (env var `CLOUDINARY_API_SECRET`, `CloudinaryProperties`). Guardado: 503 `UPLOAD_NOT_CONFIGURED` enquanto a credencial não estiver setada (verificado — não derruba a API).
 - [x] `delete` deixa de ser no-op: `DELETE /api/v1/uploads {url}` assina e chama `destroy` no Cloudinary, extraindo `resourceType`/`publicId` da própria URL (`CloudinaryUrlParser`). Idempotente (loga e engole falha).
 - [x] `CloudinaryAnexoRepository` → `ApiAnexoRepository` (flag `USE_API_UPLOAD`, default off). `cloudinary_config.dart` no app mantém cloud name/preset (preset só é usado quando a flag está off).
 - [ ] Exclusão de conta/pet/histórico passa a chamar `delete()` nos anexos de fato (hoje o app já tenta, mas o repositório era no-op) — **conferir que os call sites usam o `anexoRepositoryProvider` certo** quando a flag estiver ligada.
-- [x] Testes: `CloudinarySignerTest` (4, vetores conferidos com Node), `CloudinaryUrlParserTest` (4), `UploadControllerTest` (5, `CloudinaryClient` mockado). App: `api_anexo_repository_test.dart` (2). Suíte backend 68/68.
+- [x] Testes: `CloudinarySignerTest` (4, vetores conferidos com Node), `CloudinaryUrlParserTest` (4), `UploadControllerTest` (7 — 5 originais + 2 de posse de upload). App: `api_anexo_repository_test.dart` (2). Suíte backend 74/74.
 - [x] **Verificado parcialmente e2e**: sem token → 401; com token mas sem `CLOUDINARY_API_KEY`/`CLOUDINARY_API_SECRET` configurados → 503 gracioso nos dois endpoints (não crasha, não vaza stack trace).
-- [ ] **Round-trip real contra o Cloudinary** (subir um arquivo assinado, confirmar no dashboard, excluir, confirmar que sumiu) — pendente da API Secret real do usuário.
+- [x] **Round-trip real contra o Cloudinary — feito e confirmado (2026-09-12)**, contra a conta de produção real (Render + credencial real do usuário): assinatura → upload de uma imagem de verdade (dentro da pasta `users/<tutorId>/`) → confirmado acessível → excluído via API → **confirmado que a URL para de responder (404) em ~15s**, não só que o Cloudinary "achava" que tinha apagado.
+- [x] **Achado real no processo, corrigido**: a primeira tentativa de exclusão confirmou o `result: ok` do Cloudinary, mas a URL antiga continuava servível pela CDN (Cloudflare) por até 30 dias (`Cache-Control: immutable, max-age=2592000`) — a chamada de `destroy` não pedia `invalidate=true`. Corrigido em `CloudinaryHttpClient`, testado e confirmado que agora a invalidação de fato acontece (~15s de propagação). Risco real de privacidade que existia desde a implementação original da FASE 10, nunca detectável só com testes mockados.
 
 **Nota de segurança residual — ✅ RESOLVIDA na etapa seguinte** (ver `docs/next-stage/05-security-review.md`): a posse do arquivo agora é garantida por uma pasta assinada por tutor (`users/<tutorId>/...`) nos parâmetros da assinatura do Cloudinary — sem precisar de tabela própria de "quem subiu o quê". `DELETE /api/v1/uploads` de um arquivo fora da pasta do tutor autenticado responde 404. Testado (`UploadControllerTest`, 2 casos novos).
 

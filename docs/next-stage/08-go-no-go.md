@@ -14,7 +14,7 @@
 | Infraestrutura | ✅ **Ao vivo desde 2026-09-11** — MongoDB Atlas, API no Render, página do QR no Firebase Hosting, tudo testado de ponta a ponta com um pet real (ver `09-infrastructure-live.md`) | Favorável |
 | UX | ⚠️ 1 achado P1 corrigido (acessibilidade); P2/P3 no backlog, nenhum P0 | Favorável, sem bloqueio |
 | Erros conhecidos | ⚠️ `auth_flow_test.dart` ainda não roda em nenhum ambiente (bloqueado por acesso entre repos — decisão pendente do usuário) | Restrição |
-| Upload/Cloudinary | 🔴 Round-trip real **nunca testado** — falta a API secret real (`BLOCKED_BY_SECRET`) | Restrição forte |
+| Upload/Cloudinary | ✅ **Testado de ponta a ponta em 2026-09-12** contra a conta real (upload → confirmado → excluído → confirmado 404 com invalidação de CDN funcionando) — ver `05-security-review.md` | Favorável |
 | Autenticação | ✅ Inalterada, Firebase Auth continua sendo a fonte de identidade em qualquer flag | Favorável |
 | Validação em device físico | 🔴 **Não executada** — checklist pronto (34 casos), zero linhas preenchidas ainda | Restrição forte |
 | Rollback | ✅ Flags desligam feature a feature; Firestore continua como fallback; nenhuma Rule destrutiva foi aplicada | Favorável |
@@ -26,10 +26,9 @@
 Por instrução explícita do plano de execução: **"Se device físico ainda
 não foi testado, NÃO declare liberação plena para produção."** — o
 checklist existe, mas nenhuma linha foi preenchida (eu não posso operar
-o device do usuário). Some a isso o round-trip do Cloudinary nunca
-testado contra a conta real, e a auth E2E ainda sem confirmação de
-execução — três lacunas de **confirmação real de comportamento**, não
-de código.
+o device do usuário). Some a isso a auth E2E ainda sem confirmação de
+execução — lacunas de **confirmação real de comportamento** no app,
+não de código (a página pública e o Cloudinary já foram confirmados).
 
 ## Por que não é `NO_GO`
 
@@ -46,9 +45,9 @@ confirmado.
 1. ~~Não abrir a página pública do QR pro público real~~ — **superado**:
    página no ar, testada de ponta a ponta com um pet real pela interface
    de verdade (não só API). Pode ser usada.
-2. **Não usar upload de imagem em produção** até o round-trip real do
-   Cloudinary ser testado com a secret de verdade (`BLOCKED_BY_SECRET`)
-   — continua pendente.
+2. ~~Não usar upload de imagem em produção~~ — **superado**: round-trip
+   real testado com a secret de verdade, incluindo a correção de
+   invalidação de CDN. Pode ser usado.
 3. **Rodar o `device-validation-checklist.md` antes de considerar
    qualquer flag "pronta para todo mundo"** — mesmo com os testes
    automatizados verdes, nenhuma tela do **app** foi confirmada
@@ -65,8 +64,7 @@ confirmado.
 ## Condição para reavaliar como `GO` pleno
 
 Quando: (a) pelo menos a Rodada 1 e 2 do `device-validation-checklist.md`
-estiverem preenchidas com `PASS` (no app — a página pública já está
-validada), e (b) o round-trip do Cloudinary for confirmado com a secret
-real, e (c) a decisão de acesso entre repos for tomada (mesmo que a
-solução ainda não esteja implementada, só decidida) — reavaliar esta
-decisão.
+estiverem preenchidas com `PASS` (no app — a página pública e o
+Cloudinary já estão validados), e (b) a decisão de acesso entre repos
+for tomada (mesmo que a solução ainda não esteja implementada, só
+decidida) — reavaliar esta decisão.

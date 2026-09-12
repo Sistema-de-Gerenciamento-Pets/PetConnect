@@ -76,27 +76,30 @@ conferidos contra uma implementação Node.js antes de virarem teste
 servidor (não confia em valor do cliente). `folder` passou a ser assinado
 nesta etapa (ver correção acima).
 
-**`CLOUDINARY_API_SECRET` real não está disponível nesta máquina** — o
-round-trip completo (assinar → subir de verdade → receber URL → excluir de
-verdade) nunca foi testado contra a conta Cloudinary real do projeto, só
-com mocks. Marcado como:
+**✅ RESOLVIDO em 2026-09-12** — o usuário configurou
+`CLOUDINARY_API_KEY`/`CLOUDINARY_API_SECRET` reais no Render. Round-trip
+completo testado contra a conta de produção real:
 
 ```
-STATUS: BLOCKED_BY_SECRET
+STATUS: PASS — testado de ponta a ponta contra a conta real
 ```
 
-**Instrução de configuração** (não farei isso — é a credencial do usuário):
-1. `console.cloudinary.com` → Dashboard → copiar "API Secret".
-2. Configurar como variável de ambiente `CLOUDINARY_API_SECRET` (nunca no
-   código, nunca no `.env` commitado — `PetConnect-API/.env` já está no
-   `.gitignore`).
-3. Reiniciar o container da API (`docker compose up -d --build api`).
-4. Rodar de fato um upload pelo app (com `USE_API_UPLOAD=true`) e confirmar
-   visualmente que a foto aparece; depois trocar/excluir e confirmar no
-   painel do Cloudinary que o arquivo antigo foi removido.
+1. `POST /uploads/signature` → 200, com `folder` correto (`users/<tutorId>/`).
+2. Upload direto de uma imagem real pro Cloudinary → 200, dentro da pasta certa.
+3. `GET` na `secure_url` → 200, imagem confirmada de verdade no Cloudinary.
+4. `DELETE /uploads` → 204.
+5. `GET` na mesma URL, ~15s depois → **404**, `desc=miss` (foi na origem,
+   não serviu do cache) — confirma que excluiu e invalidou o CDN.
 
-Nunca vou pedir pra colar a secret na conversa nem vou inventar um valor
-placeholder que pareça real.
+**Achado real no processo, corrigido antes de fechar**: a primeira
+tentativa de exclusão retornou `result: ok` do Cloudinary, mas a URL
+antiga continuou respondendo `200` do cache da CDN (Cloudflare,
+`Cache-Control: immutable, max-age=2592000` — 30 dias) — `destroy()` não
+pedia `invalidate=true`. Risco real: uma foto "excluída" continuava
+acessível pela URL antiga por até 30 dias. Corrigido em
+`CloudinaryHttpClient.destroy()`, testado (74/74) e confirmado ao vivo
+(passo 5 acima). Nenhum teste automatizado mockado teria pego isso — só
+apareceu testando contra o Cloudinary de verdade.
 
 ---
 
