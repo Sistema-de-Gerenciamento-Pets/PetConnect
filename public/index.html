@@ -303,8 +303,19 @@
       return;
     }
 
+    // O servidor gratuito "dorme" depois de um tempo sem uso e pode levar
+    // até ~2 minutos pra acordar na primeira consulta do dia. Sem esse
+    // aviso, a pessoa acha que travou e desiste antes da resposta chegar.
+    var slowHintTimer = setTimeout(function () {
+      var p = card.querySelector('.msg p');
+      if (p) {
+        p.textContent = 'Isso pode levar até 2 minutos na primeira consulta do dia — aguarde, não feche esta página.';
+      }
+    }, 4000);
+
     fetch(API_BASE_URL + '/api/v1/public/pets/' + encodeURIComponent(publicId))
       .then(function (res) {
+        clearTimeout(slowHintTimer);
         if (res.status === 404) { renderNotFound(card); return null; }
         if (!res.ok) { renderError(card); return null; }
         return res.json();
@@ -312,7 +323,10 @@
       .then(function (pet) {
         if (pet) renderPet(card, pet, publicId);
       })
-      .catch(function () { renderError(card); });
+      .catch(function () {
+        clearTimeout(slowHintTimer);
+        renderError(card);
+      });
   }
 
   init();
