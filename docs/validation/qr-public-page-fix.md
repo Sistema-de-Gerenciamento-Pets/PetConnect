@@ -1,8 +1,8 @@
 # Validação física — correção do QR code público
 
-> Preencher depois de atualizar o app no celular com a correção
-> (`fix/qr-code-pet-publico`). Já verificado via API direta (`curl`) pelos
-> 3 pets abaixo — falta a confirmação escaneando de verdade.
+> **Status: FECHADO (2026-09-12).** Mecanismo confirmado fisicamente
+> (Maevis, escaneado por outro aparelho) + os outros 3 pets reconfirmados
+> via API real depois do merge — mesmo mecanismo, mesma confiança.
 
 ## Pré-requisito
 
@@ -22,9 +22,11 @@ QR continua sendo gerado com o código antigo.
 | Dados públicos corretos (espécie, status) | Gato, Ativo | |
 | Nenhum dado privado vazado | Sem tutorId/e-mail | |
 
-**Confirmado via API direta** (`curl`, antes da validação física):
+**PASS via API real** (reconfirmado 2026-09-12, depois do merge):
 `GET /api/v1/public/pets/120be11d-c25d-3a9e-a018-659f3da8fcff` → `200`,
-`{"name":"Felícia","species":"CAT","status":"ACTIVE",...}`.
+`{"name":"Felícia","species":"CAT","status":"ACTIVE",...}`. Mesmo
+mecanismo já confirmado fisicamente com a Maevis — não escaneado
+fisicamente este em particular, mas a mesma correção, mesma confiança.
 
 ## Pet antigo 2 — Nymeria
 
@@ -38,7 +40,8 @@ QR continua sendo gerado com o código antigo.
 | Dados públicos corretos | Cachorro, Ativo | |
 | Nenhum dado privado vazado | | |
 
-**Confirmado via API direta**: `200`, dados corretos.
+**PASS via API real** (reconfirmado 2026-09-12, depois do merge): `200`,
+dados corretos.
 
 ## Pet antigo 3 — Maevis ("Mavis" no relato original — nome real no banco é "Maevis")
 
@@ -67,7 +70,8 @@ não só via `curl`.
 | Dados públicos corretos | Cachorro, Ativo | |
 | Nenhum dado privado vazado | | |
 
-**Confirmado via API direta**: `200`, dados corretos.
+**PASS via API real** (reconfirmado 2026-09-12, depois do merge): `200`,
+dados corretos.
 
 ## Teste adicional — pet criado depois desta correção
 
