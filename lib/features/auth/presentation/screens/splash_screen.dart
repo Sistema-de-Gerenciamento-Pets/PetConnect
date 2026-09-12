@@ -6,9 +6,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../usuario/presentation/providers/auth_providers.dart';
 
 /// Tela de carregamento exibida ao abrir o app, antes de decidir para onde
-/// navegar (login ou Home, dependendo da sessão — RF06). Sem ela, a
-/// primeira tela pode "piscar" para o login por uma fração de segundo
-/// enquanto o Firebase Auth ainda está resolvendo a sessão salva.
+/// navegar. Desde a correção pós-validação física, o destino é sempre
+/// `/login` na prática — [sessionBootstrapProvider] encerra qualquer
+/// sessão persistida do Firebase antes da checagem abaixo rodar, então só
+/// vai pra `/home` quem informar as credenciais de novo nesta abertura.
 ///
 /// Tempo mínimo de exibição: 2,5s — o suficiente pra marca ser reconhecida
 /// sem irritar quem já usa o app no dia a dia (referência comum para splash
@@ -29,6 +30,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   Future<void> _decidirDestino() async {
     final tempoMinimo = Future.delayed(const Duration(milliseconds: 2500));
+    // Sempre exige login de novo nesta abertura do app, mesmo com sessão
+    // persistida — precisa terminar antes da linha abaixo (ver
+    // sessionBootstrapProvider).
+    await ref.read(sessionBootstrapProvider.future);
     final usuario = await ref.read(authStateChangesProvider.future);
     await tempoMinimo;
 
