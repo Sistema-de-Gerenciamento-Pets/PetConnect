@@ -26,7 +26,7 @@ QR continua sendo gerado com o código antigo.
 `GET /api/v1/public/pets/120be11d-c25d-3a9e-a018-659f3da8fcff` → `200`,
 `{"name":"Felícia","species":"CAT","status":"ACTIVE",...}`.
 
-## Pet antigo 2 — Nymeria (Mavis/Maevis é o mesmo padrão, mesma migração)
+## Pet antigo 2 — Nymeria
 
 | Item | Esperado | Resultado |
 |---|---|---|
@@ -39,6 +39,21 @@ QR continua sendo gerado com o código antigo.
 | Nenhum dado privado vazado | | |
 
 **Confirmado via API direta**: `200`, dados corretos.
+
+## Pet antigo 3 — Maevis ("Mavis" no relato original — nome real no banco é "Maevis")
+
+| Item | Esperado | Resultado |
+|---|---|---|
+| QR abre | Sim | **PASS** |
+| Pet encontrado | Sim | **PASS** |
+| Dados exibidos corretamente | Sim | **PASS** |
+
+**✅ VALIDADO FISICAMENTE (2026-09-12)** — app atualizado com a branch
+`fix/qr-code-pet-publico` no celular real, QR escaneado **por outro
+dispositivo** (o cenário real de uso — alguém encontra o pet e escaneia),
+página pública abriu com os dados da Maevis corretos. Esta é a
+confirmação definitiva de que a correção funciona de ponta a ponta,
+não só via `curl`.
 
 ## Pet novo — Aleks
 
