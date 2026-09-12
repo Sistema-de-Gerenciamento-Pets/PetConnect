@@ -20,8 +20,13 @@ Pet _pet({String? qrCodeId}) {
 }
 
 void main() {
-  test('usa o id do pet quando não há qrCodeId (RF16)', () {
-    expect(publicPetUrl(_pet()), 'https://pet-connect-c53f1.web.app/pet/pet-1');
+  test(
+      'sem qrCodeId, calcula o publicId determinístico a partir do id (RF16 '
+      '— causa raiz documentada em docs/fixes/qr-public-pet-not-found.md)', () {
+    // 'pet-1' -> mesmo cálculo que legacy_public_id_test.dart, conferido
+    // contra o algoritmo do backend (LegacyMigrationService).
+    expect(publicPetUrl(_pet()),
+        'https://pet-connect-c53f1.web.app/pet/b5ab5677-27c9-3f7c-98f8-370d7fcd526c');
   });
 
   test('usa o qrCodeId quando presente, preparando a regeneração (RF19)', () {
