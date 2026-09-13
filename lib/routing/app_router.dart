@@ -20,6 +20,7 @@ import '../features/pet/presentation/screens/localizacao_form_screen.dart';
 import '../features/pet/presentation/screens/localizacao_list_screen.dart';
 import '../features/pet/presentation/screens/pet_detail_screen.dart';
 import '../features/pet/presentation/screens/pet_form_screen.dart';
+import '../features/pet/presentation/screens/pet_settings_screen.dart';
 import '../features/pet/presentation/screens/vacina_form_screen.dart';
 import '../features/pet/presentation/screens/vacina_list_screen.dart';
 import '../features/usuario/domain/usuario.dart';
@@ -107,6 +108,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/pet/:id/editar',
         builder: (context, state) => PetFormScreen(pet: state.extra as Pet?),
+      ),
+      GoRoute(
+        path: '/pet/:id/configuracoes',
+        builder: (context, state) =>
+            PetSettingsScreen(petId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/pet/:id/vacinas',
