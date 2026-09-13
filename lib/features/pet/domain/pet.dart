@@ -19,6 +19,7 @@ class Pet {
     this.dono,
     this.telefone,
     this.foto,
+    this.capa,
     this.qrCodeId,
   });
 
@@ -46,6 +47,11 @@ class Pet {
 
   final String? foto;
 
+  /// Foto de capa do cabeçalho do perfil (fica atrás do avatar). Pets
+  /// legados não têm — nula/vazia é o caso normal, tratado com fallback
+  /// visual, nunca um erro.
+  final String? capa;
+
   /// Identificador usado na URL pública do QR code (RF16/RF19). Pode ser
   /// igual a [id] até que a regeneração de QR code (RF19) seja implementada.
   final String? qrCodeId;
@@ -66,6 +72,7 @@ class Pet {
       dono: map['dono'] as String?,
       telefone: map['telefone'] as String?,
       foto: map['foto'] as String?,
+      capa: map['capa'] as String?,
       qrCodeId: map['qrCodeId'] as String?,
     );
   }
@@ -85,6 +92,7 @@ class Pet {
       'dono': dono,
       'telefone': telefone,
       'foto': foto,
+      'capa': capa,
       'qrCodeId': qrCodeId,
     };
   }
@@ -102,6 +110,7 @@ class Pet {
     String? dono,
     String? telefone,
     String? foto,
+    String? capa,
     String? qrCodeId,
   }) {
     return Pet(
@@ -119,6 +128,7 @@ class Pet {
       dono: dono ?? this.dono,
       telefone: telefone ?? this.telefone,
       foto: foto ?? this.foto,
+      capa: capa ?? this.capa,
       qrCodeId: qrCodeId ?? this.qrCodeId,
     );
   }

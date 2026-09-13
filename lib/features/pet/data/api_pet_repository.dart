@@ -107,6 +107,7 @@ class ApiPetRepository implements PetRepository {
       'vaccinatedFlag': p.vacinado,
       'publicContactPhone': p.telefone,
       'photoUrl': p.foto,
+      'coverPhotoUrl': p.capa,
     };
   }
 
@@ -126,6 +127,7 @@ class ApiPetRepository implements PetRepository {
       vacinado: (m['vaccinatedFlag'] ?? false) as bool,
       telefone: m['publicContactPhone'] as String?,
       foto: m['photoUrl'] as String?,
+      capa: m['coverPhotoUrl'] as String?,
       // A API gerencia o id público do QR (RF16/RF19).
       qrCodeId: m['publicId'] as String?,
     );
