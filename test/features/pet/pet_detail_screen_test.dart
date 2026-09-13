@@ -11,6 +11,7 @@ import 'package:pet_connect/features/pet/presentation/providers/pet_providers.da
 import 'package:pet_connect/features/pet/presentation/screens/pet_detail_screen.dart';
 import 'package:pet_connect/features/pet/presentation/widgets/fullscreen_image_viewer.dart';
 import 'package:pet_connect/features/pet/presentation/widgets/pet_avatar.dart';
+import 'package:pet_connect/features/pet/presentation/widgets/pet_cover_image.dart';
 import 'package:pet_connect/features/usuario/domain/usuario.dart';
 import 'package:pet_connect/features/usuario/presentation/providers/auth_providers.dart';
 
@@ -316,6 +317,37 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.byType(FullscreenImageViewer), findsOneWidget);
+      handle.dispose();
+    });
+
+    testWidgets('tocar na capa do pet também abre a visualização fullscreen',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(_appPara(_petComFotoECapa));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      await tester.tap(find
+          .bySemanticsLabel('Capa de Bidu. Toque duas vezes para ampliar.'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byType(FullscreenImageViewer), findsOneWidget);
+      handle.dispose();
+    });
+
+    testWidgets('sem capa, o cabeçalho mostra o fallback e não abre nada',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(_appPara(_petCompleto)); // sem capa cadastrada
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PetCoverImage), findsOneWidget);
+      await tester.tap(find.byType(PetCoverImage));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(FullscreenImageViewer), findsNothing);
+      expect(tester.takeException(), isNull);
       handle.dispose();
     });
 
