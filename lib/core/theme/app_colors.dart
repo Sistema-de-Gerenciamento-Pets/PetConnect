@@ -17,6 +17,12 @@ abstract final class AppColors {
 
   static const Color error = Color(0xFFB3261E);
 
+  /// Mesmo valor de `AppPalette.padrao.success` — reaproveitado aqui (não
+  /// duplicado com um tom diferente) porque esta tela ainda não foi
+  /// migrada para `context.colors` (ver docs/features/
+  /// theme-and-settings-menu.md, "Hardcodes restantes").
+  static const Color success = Color(0xFF2E7D32);
+
   static const LinearGradient brandGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
