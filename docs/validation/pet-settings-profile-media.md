@@ -43,3 +43,27 @@ pelo menos dois pets diferentes (ex.: Felícia e Aleks).
 
 Marcar `[x]` (passou) ou `FALHOU: <o que aconteceu>` ao lado. Se algo
 falhar, não mesclar a PR até corrigir.
+
+> **Status: validado fisicamente pelo tutor (2026-09-13).** Checklist
+> acima confirmado — "Testei, deu tudo certo" — e as duas PRs
+> (TecnoDreamer/PetConnect#54, AleksGustavo/PetConnect-API#14) mescladas.
+
+---
+
+## Atualização 2026-09-13 — avatar maior + reposicionar a capa
+
+Branch: `feat/ajuste-avatar-e-posicao-capa`.
+
+- [ ] Avatar do perfil está visivelmente maior que antes
+- [ ] Continua sem overflow em nenhuma largura de tela
+- [ ] Configurações do Pet mostra "Ajustar posição" quando há capa
+      cadastrada
+- [ ] "Ajustar posição" **não** aparece quando o pet não tem capa
+- [ ] Arrastar a foto no editor move a área visível pra cima/baixo, sem
+      nunca deixar espaço vazio
+- [ ] "SALVAR" aplica a nova posição e ela aparece correta no perfil
+      depois de voltar
+- [ ] Sair do editor sem tocar em "SALVAR" mantém a posição anterior
+- [ ] Enviar uma foto de capa nova já abre o editor de posição em
+      seguida
+- [ ] A posição escolhida persiste depois de fechar e reabrir o app
