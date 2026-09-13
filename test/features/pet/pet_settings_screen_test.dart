@@ -102,6 +102,20 @@ void main() {
       expect(find.text('Configurações de Felícia'), findsOneWidget);
     });
 
+    testWidgets('itens de navegação não têm subtítulo (novo padrão de menu)',
+        (tester) async {
+      final repo = FakePetRepository();
+      final id = await repo.createPet(_pet(id: '', nome: 'Felícia'));
+
+      await tester.pumpWidget(_appPara(repo, id));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Editar perfil'), findsOneWidget);
+      expect(find.text('Dados de Felícia'), findsNothing);
+      expect(find.text('Excluir perfil do pet'), findsOneWidget);
+      expect(find.text('Remove Felícia do aplicativo'), findsNothing);
+    });
+
     testWidgets('cada pet abre as próprias configurações, nunca a de outro',
         (tester) async {
       final repo = FakePetRepository();
