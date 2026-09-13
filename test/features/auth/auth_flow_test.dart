@@ -3,6 +3,11 @@
 // (e eventualmente entrar no CI) — reescrito na FASE 12 (R-11) para não
 // tocar em infraestrutura real:
 //
+// Tag `e2e`: precisa do Auth Emulator + API + Mongo de pé (ver pré-requisitos
+// abaixo) — por isso fica de fora do `flutter test` do CI
+// (--exclude-tags=e2e em ci.yml), ao contrário dos outros testes de
+// test/features/auth/, que não dependem de infraestrutura externa.
+//
 //   - Firebase Auth: aponta pro **Auth Emulator** local, não pro projeto de
 //     produção. O usuário de teste só existe no emulador (processo
 //     efêmero) — nada é criado no Firebase real.
@@ -50,6 +55,9 @@
 // rodando de fato — o caminho mais provável de funcionar sem mais esforço de
 // infra é um CI real (GitHub Actions `ubuntu-latest`, sem as camadas de
 // container-dentro-de-container que o contorno local precisou empilhar).
+@Tags(['e2e'])
+library;
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
