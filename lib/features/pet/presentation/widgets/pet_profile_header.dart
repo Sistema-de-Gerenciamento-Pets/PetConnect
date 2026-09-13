@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/br_date.dart';
 import '../../domain/pet.dart';
+import 'fullscreen_image_viewer.dart';
 import 'pet_avatar.dart';
 import 'pet_cover_image.dart';
 
@@ -17,6 +18,8 @@ class PetProfileHeader extends StatelessWidget {
 
   static const _avatarRadius = 44.0;
 
+  bool get _temCapa => pet.capa != null && pet.capa!.isNotEmpty;
+
   @override
   Widget build(BuildContext context) {
     final idade = idadeEmAnos(pet.dataNascimento);
@@ -30,10 +33,29 @@ class PetProfileHeader extends StatelessWidget {
         Stack(
           clipBehavior: Clip.none,
           children: [
-            PetCoverImage(
-              capaUrl: pet.capa,
-              height: 140,
-              borderRadius: BorderRadius.circular(24),
+            // Só abre fullscreen quando há capa de verdade — sem capa, é
+            // só o gradiente de fallback, sem nada pra ampliar (seção 23).
+            Semantics(
+              label: _temCapa
+                  ? 'Capa de ${pet.nome}. Toque duas vezes para ampliar.'
+                  : null,
+              image: _temCapa,
+              child: GestureDetector(
+                onTap: _temCapa
+                    ? () => FullscreenImageViewer.open(
+                          context,
+                          imageUrl: pet.capa!,
+                          semanticLabel: 'Capa de ${pet.nome}',
+                        )
+                    : null,
+                child: ExcludeSemantics(
+                  child: PetCoverImage(
+                    capaUrl: pet.capa,
+                    height: 140,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+              ),
             ),
             Positioned(
               left: 20,
