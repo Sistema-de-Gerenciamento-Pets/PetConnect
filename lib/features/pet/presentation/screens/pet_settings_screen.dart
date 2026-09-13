@@ -11,6 +11,7 @@ import '../../../usuario/presentation/providers/auth_providers.dart';
 import '../../domain/pet.dart';
 import '../providers/anexo_providers.dart';
 import '../providers/pet_providers.dart';
+import '../widgets/cover_position_editor.dart';
 import '../widgets/pet_cover_image.dart';
 
 const _tamanhoMaximoCapa = 5 * 1024 * 1024; // 5MB — ver docs/seguranca.md.
@@ -36,8 +37,12 @@ class PetSettingsScreen extends ConsumerStatefulWidget {
 class _PetSettingsScreenState extends ConsumerState<PetSettingsScreen> {
   bool _enviandoCapa = false;
   bool _removendoCapa = false;
+  bool _salvandoPosicao = false;
   bool _excluindo = false;
   String? _error;
+
+  bool get _ocupadoComCapa =>
+      _enviandoCapa || _removendoCapa || _salvandoPosicao;
 
   Future<void> _alterarCapa(Pet pet) async {
     final arquivo = await ImagePicker()
@@ -60,13 +65,18 @@ class _PetSettingsScreenState extends ConsumerState<PetSettingsScreen> {
 
     final anexos = ref.read(anexoRepositoryProvider);
     final capaAntiga = pet.capa;
+    late final String url;
 
     try {
       final path =
           'pets/capas/$uid/${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final url = await anexos.upload(
+      url = await anexos.upload(
           path: path, bytes: bytes, contentType: 'image/jpeg');
-      await ref.read(petRepositoryProvider).updatePet(pet.copyWith(capa: url));
+      // Foto nova recentraliza o alinhamento — a posição antiga não faz
+      // sentido pra uma imagem diferente.
+      await ref
+          .read(petRepositoryProvider)
+          .updatePet(pet.copyWith(capa: url, capaAlinhamentoY: 0));
 
       // Limpeza best-effort da capa antiga — não impede a troca se falhar
       // (mesmo comportamento tolerante já usado em histórico médico).
@@ -80,8 +90,45 @@ class _PetSettingsScreenState extends ConsumerState<PetSettingsScreen> {
       if (mounted) {
         setState(() => _error = describirErroUpload(e, item: 'a capa'));
       }
+      return;
     } finally {
       if (mounted) setState(() => _enviandoCapa = false);
+    }
+
+    // Convite direto pra já ajustar a posição da foto recém-enviada —
+    // mesmo padrão de apps que têm editor de capa (Facebook/Instagram).
+    if (mounted) await _ajustarPosicaoCapa(pet.copyWith(capa: url));
+  }
+
+  Future<void> _ajustarPosicaoCapa(Pet pet) async {
+    final capaAtual = pet.capa;
+    if (capaAtual == null || capaAtual.isEmpty) return;
+
+    final novoAlinhamento = await CoverPositionEditor.open(
+      context,
+      imageUrl: capaAtual,
+      alinhamentoInicial: pet.capaAlinhamentoY ?? 0,
+    );
+    if (novoAlinhamento == null || !mounted) return; // voltou sem salvar
+
+    setState(() {
+      _error = null;
+      _salvandoPosicao = true;
+    });
+
+    try {
+      await ref
+          .read(petRepositoryProvider)
+          .updatePet(pet.copyWith(capaAlinhamentoY: novoAlinhamento));
+      ref.invalidate(petProvider(pet.id));
+      ref.invalidate(petsProvider);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error =
+            'Não foi possível salvar a posição da capa. Tente novamente.');
+      }
+    } finally {
+      if (mounted) setState(() => _salvandoPosicao = false);
     }
   }
 
@@ -218,18 +265,21 @@ class _PetSettingsScreenState extends ConsumerState<PetSettingsScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: PetCoverImage(capaUrl: pet.capa, height: 100),
+                    child: PetCoverImage(
+                      capaUrl: pet.capa,
+                      height: 100,
+                      alignmentY: pet.capaAlinhamentoY ?? 0,
+                    ),
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.fromLTRB(16, 16, 16, temCapa ? 8 : 16),
                   child: Row(
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: _enviandoCapa || _removendoCapa
-                              ? null
-                              : () => _alterarCapa(pet),
+                          onPressed:
+                              _ocupadoComCapa ? null : () => _alterarCapa(pet),
                           icon: _enviandoCapa
                               ? const SizedBox(
                                   width: 16,
@@ -245,7 +295,7 @@ class _PetSettingsScreenState extends ConsumerState<PetSettingsScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: _enviandoCapa || _removendoCapa
+                            onPressed: _ocupadoComCapa
                                 ? null
                                 : () => _removerCapa(pet),
                             icon: _removendoCapa
@@ -265,6 +315,23 @@ class _PetSettingsScreenState extends ConsumerState<PetSettingsScreen> {
                     ],
                   ),
                 ),
+                if (temCapa)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: OutlinedButton.icon(
+                      onPressed: _ocupadoComCapa
+                          ? null
+                          : () => _ajustarPosicaoCapa(pet),
+                      icon: _salvandoPosicao
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.control_camera_outlined),
+                      label: const Text('Ajustar posição'),
+                    ),
+                  ),
                 if (_error != null)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),

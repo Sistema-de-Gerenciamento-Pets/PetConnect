@@ -12,11 +12,16 @@ class PetCoverImage extends StatelessWidget {
     required this.capaUrl,
     this.height = 140,
     this.borderRadius = BorderRadius.zero,
+    this.alignmentY = 0,
   });
 
   final String? capaUrl;
   final double height;
   final BorderRadiusGeometry borderRadius;
+
+  /// De -1.0 (topo) a 1.0 (base) — qual parte da foto fica visível dentro
+  /// do recorte, escolhida pelo tutor em vez do centro automático.
+  final double alignmentY;
 
   bool get temCapa => capaUrl != null && capaUrl!.isNotEmpty;
 
@@ -40,6 +45,7 @@ class PetCoverImage extends StatelessWidget {
         height: height,
         width: double.infinity,
         fit: BoxFit.cover,
+        alignment: Alignment(0, alignmentY),
         placeholder: (context, url) => Container(
           height: height,
           width: double.infinity,
