@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_palette.dart';
 import 'pet_cover_image.dart';
 
 /// Deixa o tutor arrastar a capa pra escolher a área que aparece no perfil,
@@ -59,14 +59,11 @@ class _CoverPositionEditorState extends State<CoverPositionEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: colors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        title: const Text('Ajustar posição da capa',
-            style: TextStyle(color: AppColors.textPrimary)),
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        title: const Text('Ajustar posição da capa'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(_alinhamentoY),
@@ -82,12 +79,12 @@ class _CoverPositionEditorState extends State<CoverPositionEditor> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Padding(
-              padding: EdgeInsets.all(24),
+            Padding(
+              padding: const EdgeInsets.all(24),
               child: Text(
                 'Arraste a foto para cima ou para baixo para escolher a área que aparece no perfil.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textMuted),
+                style: TextStyle(color: colors.textMuted),
               ),
             ),
             Semantics(

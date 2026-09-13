@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_palette.dart';
 import '../../domain/consulta_alerta.dart';
 import '../../domain/pet.dart';
 import '../../domain/vacina_alerta.dart';
@@ -27,6 +27,7 @@ class PetFeatureGrid extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final vacinasAsync = ref.watch(vacinasProvider(pet.id));
     final consultasAsync = ref.watch(consultasProvider(pet.id));
+    final colors = context.colors;
 
     final vacinaAlerta = vacinasAsync.valueOrNull
             ?.any((vacina) => calcularAlerta(vacina) != VacinaAlerta.nenhum) ??
@@ -40,8 +41,8 @@ class PetFeatureGrid extends ConsumerWidget {
           vacinaAlerta ? Icons.warning_amber_rounded : Icons.vaccines_outlined,
       title: 'Carteira de Vacinas',
       description: 'Consulte as vacinas aplicadas e próximas doses.',
-      background: AppColors.petCardBackgrounds[0],
-      accent: AppColors.petCardAccents[0],
+      background: colors.petCardBackgrounds[0],
+      accent: colors.petCardAccents[0],
       badge: vacinaAlerta,
       onTap: () => context.push('/pet/${pet.id}/vacinas'),
     );
@@ -52,8 +53,8 @@ class PetFeatureGrid extends ConsumerWidget {
           : Icons.event_available_outlined,
       title: 'Agenda de Consultas',
       description: 'Veja e agende consultas do seu pet.',
-      background: AppColors.petCardBackgrounds[1],
-      accent: AppColors.petCardAccents[1],
+      background: colors.petCardBackgrounds[1],
+      accent: colors.petCardAccents[1],
       badge: consultaAlerta,
       onTap: () => context.push('/pet/${pet.id}/consultas'),
     );
@@ -62,8 +63,8 @@ class PetFeatureGrid extends ConsumerWidget {
       icon: Icons.medical_information_outlined,
       title: 'Histórico Médico',
       description: 'Acesse diagnósticos e tratamentos anteriores.',
-      background: AppColors.petCardBackgrounds[2],
-      accent: AppColors.petCardAccents[2],
+      background: colors.petCardBackgrounds[2],
+      accent: colors.petCardAccents[2],
       onTap: () => context.push('/pet/${pet.id}/historico'),
     );
 
@@ -71,8 +72,8 @@ class PetFeatureGrid extends ConsumerWidget {
       icon: Icons.qr_code_2,
       title: 'QR Code do Pet',
       description: 'Acesse e compartilhe o perfil público do seu pet.',
-      background: AppColors.petCardBackgrounds[3],
-      accent: AppColors.petCardAccents[3],
+      background: colors.petCardBackgrounds[3],
+      accent: colors.petCardAccents[3],
       onTap: () => _abrirQrCode(context),
     );
 
@@ -106,7 +107,7 @@ class PetFeatureGrid extends ConsumerWidget {
   void _abrirQrCode(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.background,
+      backgroundColor: context.colors.background,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),

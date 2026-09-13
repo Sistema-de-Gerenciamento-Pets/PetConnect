@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_palette.dart';
 
 /// Card visual de uma funcionalidade principal do perfil do pet (Carteira
 /// de Vacinas, Consultas, Histórico, QR Code). O card inteiro é clicável —
@@ -31,6 +31,7 @@ class PetFeatureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Semantics(
       button: true,
       label: badge
@@ -54,8 +55,8 @@ class PetFeatureCard extends StatelessWidget {
                     children: [
                       Container(
                         padding: const EdgeInsets.all(10),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
+                        decoration: BoxDecoration(
+                          color: colors.cardBackground,
                           shape: BoxShape.circle,
                         ),
                         child: Icon(icon, color: accent, size: 22),
@@ -64,8 +65,8 @@ class PetFeatureCard extends StatelessWidget {
                         Container(
                           width: 10,
                           height: 10,
-                          decoration: const BoxDecoration(
-                            color: AppColors.error,
+                          decoration: BoxDecoration(
+                            color: colors.error,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -76,10 +77,10 @@ class PetFeatureCard extends StatelessWidget {
                     title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
-                      color: AppColors.textPrimary,
+                      color: colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -87,8 +88,7 @@ class PetFeatureCard extends StatelessWidget {
                     description,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textMuted),
+                    style: TextStyle(fontSize: 12, color: colors.textMuted),
                   ),
                 ],
               ),

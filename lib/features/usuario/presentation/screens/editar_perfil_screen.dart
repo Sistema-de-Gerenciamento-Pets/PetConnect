@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_palette.dart';
 import '../../../../core/utils/br_date.dart';
 import '../../../../core/utils/upload_error.dart';
 import '../../../../core/widgets/avatar_picker.dart';
@@ -125,15 +125,10 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        title: const Text('Editar perfil',
-            style: TextStyle(color: AppColors.textPrimary)),
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-      ),
+      backgroundColor: colors.background,
+      appBar: AppBar(title: const Text('Editar perfil')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -174,10 +169,10 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
                   controller: _nascimentoController,
                   readOnly: true,
                   onTap: _pickNascimento,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Data de nascimento:',
                     suffixIcon:
-                        Icon(Icons.calendar_today, color: AppColors.textMuted),
+                        Icon(Icons.calendar_today, color: colors.textMuted),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -192,19 +187,18 @@ class _EditarPerfilScreenState extends ConsumerState<EditarPerfilScreen> {
                 if (_error != null) ...[
                   const SizedBox(height: 12),
                   Text(_error!,
-                      style: const TextStyle(
-                          color: AppColors.error, fontSize: 13)),
+                      style: TextStyle(color: colors.error, fontSize: 13)),
                 ],
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _submitting ? null : _handleSalvar,
                   child: _submitting
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: AppColors.textOnBrand,
+                            color: colors.textOnBrand,
                           ),
                         )
                       : const Text('SALVAR'),

@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_palette.dart';
 import 'fullscreen_image_viewer.dart';
 
 /// Foto do pet em destaque no cabeçalho do perfil (RF15). Usa cache de
@@ -28,6 +28,7 @@ class PetAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final diametro = radius * 2;
+    final colors = context.colors;
 
     return Semantics(
       label: _temFoto
@@ -53,9 +54,9 @@ class PetAvatar extends StatelessWidget {
                     placeholder: (context, url) => SizedBox(
                       width: diametro,
                       height: diametro,
-                      child: const ColoredBox(
-                        color: AppColors.surface,
-                        child: Center(
+                      child: ColoredBox(
+                        color: colors.surface,
+                        child: const Center(
                           child: SizedBox(
                             width: 20,
                             height: 20,
@@ -83,15 +84,15 @@ class _Fallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Container(
       width: diametro,
       height: diametro,
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
+      decoration: BoxDecoration(
+        color: colors.surface,
         shape: BoxShape.circle,
       ),
-      child:
-          Icon(Icons.pets, size: radius * 0.85, color: AppColors.brandMedium),
+      child: Icon(Icons.pets, size: radius * 0.85, color: colors.brandMedium),
     );
   }
 }
