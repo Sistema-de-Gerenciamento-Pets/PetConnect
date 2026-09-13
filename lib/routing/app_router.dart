@@ -26,6 +26,7 @@ import '../features/pet/presentation/screens/vacina_list_screen.dart';
 import '../features/usuario/domain/usuario.dart';
 import '../features/usuario/presentation/providers/auth_providers.dart';
 import '../features/usuario/presentation/screens/configuracoes_screen.dart';
+import '../features/usuario/presentation/screens/tema_screen.dart';
 import '../features/usuario/presentation/screens/editar_perfil_screen.dart';
 import '../features/usuario/presentation/screens/home_screen.dart';
 
@@ -183,6 +184,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/configuracoes/editar-perfil',
         builder: (context, state) =>
             EditarPerfilScreen(usuario: state.extra as Usuario),
+      ),
+      GoRoute(
+        path: '/configuracoes/tema',
+        builder: (context, state) => const TemaScreen(),
       ),
     ],
   );
