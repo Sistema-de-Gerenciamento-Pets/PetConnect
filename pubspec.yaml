@@ -33,6 +33,7 @@ dependencies:
   cached_network_image:
   http:
   crypto:
+  shared_preferences:
 
   cupertino_icons: ^1.0.6
 
