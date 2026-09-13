@@ -2,6 +2,7 @@
 // em vez do recorte automático — pedido do tutor após validar a PR de
 // configurações do pet no aparelho físico).
 import 'package:flutter/material.dart';
+import 'package:pet_connect/core/theme/app_theme.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pet_connect/features/pet/presentation/widgets/cover_position_editor.dart';
 import 'package:pet_connect/features/pet/presentation/widgets/pet_cover_image.dart';
@@ -23,6 +24,7 @@ void main() {
         (tester) async {
       double? resultado;
       await tester.pumpWidget(MaterialApp(
+        theme: AppTheme.light(),
         home: Builder(
           builder: (context) => ElevatedButton(
             onPressed: () async {
@@ -46,6 +48,7 @@ void main() {
         (tester) async {
       double? resultado;
       await tester.pumpWidget(MaterialApp(
+        theme: AppTheme.light(),
         home: Builder(
           builder: (context) => ElevatedButton(
             onPressed: () async {
@@ -78,8 +81,9 @@ void main() {
 
     testWidgets('respeita os limites -1.0 e 1.0 mesmo com arrasto grande',
         (tester) async {
-      await tester.pumpWidget(const MaterialApp(
-        home: CoverPositionEditor(imageUrl: _capaUrl),
+      await tester.pumpWidget(MaterialApp(
+        theme: AppTheme.light(),
+        home: const CoverPositionEditor(imageUrl: _capaUrl),
       ));
       await _pumpEstavel(tester);
 
@@ -102,6 +106,7 @@ void main() {
         (tester) async {
       double? resultado = -99; // sentinela pra distinguir de "nunca setado"
       await tester.pumpWidget(MaterialApp(
+        theme: AppTheme.light(),
         home: Builder(
           builder: (context) => ElevatedButton(
             onPressed: () async {
@@ -122,8 +127,10 @@ void main() {
     });
 
     testWidgets('abre já na posição inicial recebida', (tester) async {
-      await tester.pumpWidget(const MaterialApp(
-        home: CoverPositionEditor(imageUrl: _capaUrl, alinhamentoInicial: -0.6),
+      await tester.pumpWidget(MaterialApp(
+        theme: AppTheme.light(),
+        home: const CoverPositionEditor(
+            imageUrl: _capaUrl, alinhamentoInicial: -0.6),
       ));
       await _pumpEstavel(tester);
 
