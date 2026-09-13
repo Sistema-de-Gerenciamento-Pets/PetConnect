@@ -97,7 +97,12 @@ class _PetSettingsScreenState extends ConsumerState<PetSettingsScreen> {
 
     // Convite direto pra já ajustar a posição da foto recém-enviada —
     // mesmo padrão de apps que têm editor de capa (Facebook/Instagram).
-    if (mounted) await _ajustarPosicaoCapa(pet.copyWith(capa: url));
+    // capaAlinhamentoY explícito aqui (não só no updatePet acima): sem
+    // isso, o editor abriria com o alinhamento da capa ANTERIOR, já que
+    // copyWith preserva o valor do `pet` local quando não informado.
+    if (mounted) {
+      await _ajustarPosicaoCapa(pet.copyWith(capa: url, capaAlinhamentoY: 0));
+    }
   }
 
   Future<void> _ajustarPosicaoCapa(Pet pet) async {
