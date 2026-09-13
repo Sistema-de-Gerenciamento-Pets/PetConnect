@@ -12,6 +12,7 @@ import 'package:go_router/go_router.dart';
 import 'package:pet_connect/core/theme/app_theme.dart';
 import 'package:pet_connect/features/pet/domain/pet.dart';
 import 'package:pet_connect/features/pet/presentation/providers/anexo_providers.dart';
+import 'package:pet_connect/features/pet/presentation/widgets/cover_position_editor.dart';
 import 'package:pet_connect/features/pet/presentation/providers/pet_providers.dart';
 import 'package:pet_connect/features/pet/presentation/screens/pet_settings_screen.dart';
 import 'package:pet_connect/features/usuario/domain/usuario.dart';
@@ -30,7 +31,12 @@ const _tutor = Usuario(
   genero: '',
 );
 
-Pet _pet({required String id, required String nome, String? capa}) {
+Pet _pet({
+  required String id,
+  required String nome,
+  String? capa,
+  double? capaAlinhamentoY,
+}) {
   return Pet(
     id: id,
     userId: 'uid-1',
@@ -44,6 +50,7 @@ Pet _pet({required String id, required String nome, String? capa}) {
     dataNascimento: '',
     vacinado: false,
     capa: capa,
+    capaAlinhamentoY: capaAlinhamentoY,
   );
 }
 
@@ -174,7 +181,8 @@ void main() {
       expect((await repo.watchPet(id).first), isNotNull);
     });
 
-    testWidgets('pet sem capa mostra "Adicionar capa", sem botão de remover',
+    testWidgets(
+        'pet sem capa mostra "Adicionar capa", sem Remover nem Ajustar posição',
         (tester) async {
       final repo = FakePetRepository();
       final id = await repo.createPet(_pet(id: '', nome: 'Felícia'));
@@ -184,6 +192,66 @@ void main() {
 
       expect(find.text('Adicionar capa'), findsOneWidget);
       expect(find.text('Remover'), findsNothing);
+      expect(find.text('Ajustar posição'), findsNothing);
+    });
+
+    testWidgets('Ajustar posição abre o editor e salva o alinhamento novo',
+        (tester) async {
+      // Sem pumpAndSettle: a capa tem URL "real" (CachedNetworkImage
+      // bloqueado no ambiente de teste) — ver mesmo cuidado nos outros
+      // testes de capa/avatar.
+      final repo = FakePetRepository();
+      final id = await repo.createPet(
+          _pet(id: '', nome: 'Felícia', capa: 'https://fake.storage/capa.jpg'));
+
+      await tester.pumpWidget(_appPara(repo, id));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('Ajustar posição'), findsOneWidget);
+      await tester.tap(find.text('Ajustar posição'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Ajustar posição da capa'), findsOneWidget);
+
+      await tester.drag(
+          find.byType(CoverPositionEditor), const Offset(0, -100));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await tester.tap(find.text('SALVAR'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      final pet = await repo.watchPet(id).first;
+      expect(pet!.capaAlinhamentoY, isNotNull);
+      expect(pet.capaAlinhamentoY, greaterThan(0));
+    });
+
+    testWidgets('voltar do editor sem salvar não altera o alinhamento salvo',
+        (tester) async {
+      final repo = FakePetRepository();
+      final id = await repo.createPet(_pet(
+          id: '',
+          nome: 'Felícia',
+          capa: 'https://fake.storage/capa.jpg',
+          capaAlinhamentoY: 0.4));
+
+      await tester.pumpWidget(_appPara(repo, id));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      await tester.tap(find.text('Ajustar posição'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await tester.pageBack();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final pet = await repo.watchPet(id).first;
+      expect(pet!.capaAlinhamentoY, 0.4);
     });
 
     testWidgets('Remover capa limpa o campo (sem depender do image_picker)',

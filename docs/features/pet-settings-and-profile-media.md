@@ -126,3 +126,41 @@ migração precisa ser desfeita.
 ## Validação manual
 
 Ver `docs/validation/pet-settings-profile-media.md`.
+
+---
+
+## Atualização 2026-09-13 — avatar maior + reposicionar a capa
+
+Pedido do tutor depois de validar a PR anterior fisicamente. Branch:
+`feat/ajuste-avatar-e-posicao-capa`.
+
+### Avatar maior
+
+`PetProfileHeader._avatarRadius` de 44 para 52 (mudança visual isolada,
+sem impacto em dado nem rota).
+
+### Reposicionar a capa
+
+Antes, a capa sempre usava recorte automático centralizado
+(`BoxFit.cover` sem controle de alinhamento). Agora o tutor escolhe qual
+parte da foto aparece:
+
+- Campo novo `coverPhotoAlignY` (backend, -1.0 a 1.0) / `capaAlinhamentoY`
+  (Flutter) — mesma propagação completa já usada para `coverPhotoUrl`.
+  Nulo/0.0 é o centro, igual ao comportamento anterior — nenhum pet
+  existente muda de aparência até o tutor ajustar manualmente.
+- `CoverPositionEditor` (novo): arrastar a foto pra cima/baixo, com
+  prévia na mesma altura da produção (WYSIWYG). Como a capa sempre usa
+  `BoxFit.cover`, qualquer alinhamento entre -1.0 e 1.0 é válido e nunca
+  deixa área vazia — só muda o que fica visível.
+- Botão "Ajustar posição" em Configurações do Pet (só quando há capa); o
+  editor também abre automaticamente logo depois de enviar uma capa nova.
+
+### Testes (atualização)
+
+- `flutter test test/core/ test/features/pet/` — 62/62 passando.
+- Backend `mvn test` — 77/77 passando (inclui validação de faixa
+  `-1.0..1.0` para `coverPhotoAlignY`, rejeitando valores fora dela).
+- `CoverPositionEditor` testado isoladamente (posição inicial, arrasto,
+  limites, salvar/cancelar) e via `PetSettingsScreen` (fluxo completo
+  persistindo no repositório).

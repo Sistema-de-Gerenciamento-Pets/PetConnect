@@ -16,7 +16,7 @@ class PetProfileHeader extends StatelessWidget {
 
   final Pet pet;
 
-  static const _avatarRadius = 44.0;
+  static const _avatarRadius = 52.0;
 
   bool get _temCapa => pet.capa != null && pet.capa!.isNotEmpty;
 
@@ -53,6 +53,7 @@ class PetProfileHeader extends StatelessWidget {
                     capaUrl: pet.capa,
                     height: 140,
                     borderRadius: BorderRadius.circular(24),
+                    alignmentY: pet.capaAlinhamentoY ?? 0,
                   ),
                 ),
               ),

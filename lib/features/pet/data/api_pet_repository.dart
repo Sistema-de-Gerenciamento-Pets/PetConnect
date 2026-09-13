@@ -108,6 +108,7 @@ class ApiPetRepository implements PetRepository {
       'publicContactPhone': p.telefone,
       'photoUrl': p.foto,
       'coverPhotoUrl': p.capa,
+      'coverPhotoAlignY': p.capaAlinhamentoY,
     };
   }
 
@@ -128,6 +129,7 @@ class ApiPetRepository implements PetRepository {
       telefone: m['publicContactPhone'] as String?,
       foto: m['photoUrl'] as String?,
       capa: m['coverPhotoUrl'] as String?,
+      capaAlinhamentoY: (m['coverPhotoAlignY'] as num?)?.toDouble(),
       // A API gerencia o id público do QR (RF16/RF19).
       qrCodeId: m['publicId'] as String?,
     );
