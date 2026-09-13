@@ -2,48 +2,74 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import 'fullscreen_image_viewer.dart';
 
 /// Foto do pet em destaque no cabeçalho do perfil (RF15). Usa cache de
 /// imagem (evita rebaixar a mesma foto a cada rebuild) e sempre cai para um
 /// ícone quando não há foto ou o carregamento falha — nunca quebra a tela
 /// por causa de uma URL ruim.
+///
+/// Toque abre a visualização fullscreen (só quando há foto de verdade —
+/// tocar no fallback não faz nada, e o `Semantics` avisa que não há foto).
 class PetAvatar extends StatelessWidget {
-  const PetAvatar({super.key, required this.fotoUrl, this.radius = 56});
+  const PetAvatar({
+    super.key,
+    required this.fotoUrl,
+    this.radius = 56,
+    this.nomeDoPet = 'o pet',
+  });
 
   final String? fotoUrl;
   final double radius;
+  final String nomeDoPet;
+
+  bool get _temFoto => fotoUrl != null && fotoUrl!.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
-    final foto = fotoUrl;
     final diametro = radius * 2;
 
-    if (foto == null || foto.isEmpty) {
-      return _Fallback(diametro: diametro, radius: radius);
-    }
-
-    return ClipOval(
-      child: CachedNetworkImage(
-        imageUrl: foto,
-        width: diametro,
-        height: diametro,
-        fit: BoxFit.cover,
-        placeholder: (context, url) => SizedBox(
-          width: diametro,
-          height: diametro,
-          child: const ColoredBox(
-            color: AppColors.surface,
-            child: Center(
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-          ),
+    return Semantics(
+      label: _temFoto
+          ? 'Foto de $nomeDoPet. Toque duas vezes para ampliar.'
+          : '$nomeDoPet não possui foto cadastrada.',
+      image: true,
+      child: GestureDetector(
+        onTap: _temFoto
+            ? () => FullscreenImageViewer.open(
+                  context,
+                  imageUrl: fotoUrl!,
+                  semanticLabel: 'Foto de $nomeDoPet',
+                )
+            : null,
+        child: ExcludeSemantics(
+          child: _temFoto
+              ? ClipOval(
+                  child: CachedNetworkImage(
+                    imageUrl: fotoUrl!,
+                    width: diametro,
+                    height: diametro,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => SizedBox(
+                      width: diametro,
+                      height: diametro,
+                      child: const ColoredBox(
+                        color: AppColors.surface,
+                        child: Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) =>
+                        _Fallback(diametro: diametro, radius: radius),
+                  ),
+                )
+              : _Fallback(diametro: diametro, radius: radius),
         ),
-        errorWidget: (context, url, error) =>
-            _Fallback(diametro: diametro, radius: radius),
       ),
     );
   }

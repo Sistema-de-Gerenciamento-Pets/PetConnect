@@ -4,14 +4,18 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/br_date.dart';
 import '../../domain/pet.dart';
 import 'pet_avatar.dart';
+import 'pet_cover_image.dart';
 
-/// Cabeçalho de identidade do pet: foto em destaque, nome e um resumo dos
-/// dados básicos (RF15). Só mostra o que realmente existe no cadastro —
-/// nunca um campo vazio ou "null" (ver seção 4/16 do briefing de layout).
+/// Cabeçalho de identidade do pet: capa ao fundo, avatar sobreposto e
+/// deslocado para a esquerda (RF15 + mídia do perfil, 2026-09-13), nome e um
+/// resumo dos dados básicos. Só mostra o que realmente existe no cadastro —
+/// nunca um campo vazio ou "null".
 class PetProfileHeader extends StatelessWidget {
   const PetProfileHeader({super.key, required this.pet});
 
   final Pet pet;
+
+  static const _avatarRadius = 44.0;
 
   @override
   Widget build(BuildContext context) {
@@ -21,48 +25,80 @@ class PetProfileHeader extends StatelessWidget {
     final generoFeminino = pet.genero.toLowerCase().startsWith('f');
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Semantics(
-          label: 'Foto de ${pet.nome}',
-          image: true,
-          child: PetAvatar(fotoUrl: pet.foto, radius: 56),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          pet.nome,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 8,
-          runSpacing: 8,
+        Stack(
+          clipBehavior: Clip.none,
           children: [
-            if (especieRaca.isNotEmpty) _InfoChip(text: especieRaca),
-            if (idade != null)
-              _InfoChip(text: '$idade ${idade == 1 ? 'ano' : 'anos'}')
-            else if (pet.dataNascimento.isNotEmpty)
-              _InfoChip(text: pet.dataNascimento, icon: Icons.cake_outlined),
-            if (pet.genero.isNotEmpty)
-              _InfoChip(
-                text: pet.genero,
-                icon: generoFeminino ? Icons.female : Icons.male,
+            PetCoverImage(
+              capaUrl: pet.capa,
+              height: 140,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            Positioned(
+              left: 20,
+              bottom: -_avatarRadius,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: AppColors.background,
+                  shape: BoxShape.circle,
+                ),
+                child: PetAvatar(
+                  fotoUrl: pet.foto,
+                  radius: _avatarRadius,
+                  nomeDoPet: pet.nome,
+                ),
               ),
-            if (pet.peso.isNotEmpty)
-              _InfoChip(text: pet.peso, icon: Icons.monitor_weight_outlined),
-            _InfoChip(
-              text: pet.vacinado ? 'Vacinado' : 'Não vacinado',
-              icon: pet.vacinado
-                  ? Icons.check_circle_outline
-                  : Icons.error_outline,
-              color: pet.vacinado ? const Color(0xFF2E7D32) : AppColors.error,
             ),
           ],
+        ),
+        const SizedBox(height: _avatarRadius + 12),
+        Padding(
+          padding: const EdgeInsets.only(left: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                pet.nome,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (especieRaca.isNotEmpty) _InfoChip(text: especieRaca),
+                  if (idade != null)
+                    _InfoChip(text: '$idade ${idade == 1 ? 'ano' : 'anos'}')
+                  else if (pet.dataNascimento.isNotEmpty)
+                    _InfoChip(
+                        text: pet.dataNascimento, icon: Icons.cake_outlined),
+                  if (pet.genero.isNotEmpty)
+                    _InfoChip(
+                      text: pet.genero,
+                      icon: generoFeminino ? Icons.female : Icons.male,
+                    ),
+                  if (pet.peso.isNotEmpty)
+                    _InfoChip(
+                        text: pet.peso, icon: Icons.monitor_weight_outlined),
+                  _InfoChip(
+                    text: pet.vacinado ? 'Vacinado' : 'Não vacinado',
+                    icon: pet.vacinado
+                        ? Icons.check_circle_outline
+                        : Icons.error_outline,
+                    color: pet.vacinado
+                        ? const Color(0xFF2E7D32)
+                        : AppColors.error,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -92,10 +128,16 @@ class _InfoChip extends StatelessWidget {
             Icon(icon, size: 14, color: cor),
             const SizedBox(width: 4),
           ],
-          Text(
-            text,
-            style: TextStyle(
-                fontSize: 12, fontWeight: FontWeight.w600, color: cor),
+          // Flexible + ellipsis: espécie/raça combinados podem ser longos —
+          // nunca deixa o chip estourar a largura disponível (seção 10/29
+          // do briefing de mídia do perfil, "sem overflow" em 320px).
+          Flexible(
+            child: Text(
+              text,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  fontSize: 12, fontWeight: FontWeight.w600, color: cor),
+            ),
           ),
         ],
       ),
