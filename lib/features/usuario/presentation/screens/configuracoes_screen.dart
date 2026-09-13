@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_palette.dart';
+import '../../../../core/widgets/settings_menu_tile.dart';
 import '../providers/auth_providers.dart';
 
-/// Configurações do tutor: editar perfil (RF08) e excluir conta (RF09).
+/// Configurações do tutor: editar perfil (RF08), tema do aplicativo e
+/// excluir conta (RF09). Menu padronizado (ícone + título + chevron, sem
+/// subtítulo) — ver docs/features/theme-and-settings-menu.md.
 class ConfiguracoesScreen extends ConsumerStatefulWidget {
   const ConfiguracoesScreen({super.key});
 
@@ -39,6 +42,7 @@ class _ConfiguracoesScreenState extends ConsumerState<ConfiguracoesScreen> {
   }
 
   Future<void> _confirmarExclusaoConta() async {
+    final colors = context.colors;
     final confirmou = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -55,8 +59,7 @@ class _ConfiguracoesScreenState extends ConsumerState<ConfiguracoesScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Excluir conta',
-                style: TextStyle(color: AppColors.error)),
+            child: Text('Excluir conta', style: TextStyle(color: colors.error)),
           ),
         ],
       ),
@@ -85,22 +88,17 @@ class _ConfiguracoesScreenState extends ConsumerState<ConfiguracoesScreen> {
   @override
   Widget build(BuildContext context) {
     final usuarioAsync = ref.watch(currentUsuarioProvider);
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        title: const Text('Configurações',
-            style: TextStyle(color: AppColors.textPrimary)),
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-      ),
+      backgroundColor: colors.background,
+      appBar: AppBar(title: const Text('Configurações')),
       body: SafeArea(
         child: usuarioAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => const Center(
+          error: (_, __) => Center(
             child: Text('Não foi possível carregar seus dados.',
-                style: TextStyle(color: AppColors.error)),
+                style: TextStyle(color: colors.error)),
           ),
           data: (usuario) {
             if (usuario == null) return const SizedBox.shrink();
@@ -108,44 +106,39 @@ class _ConfiguracoesScreenState extends ConsumerState<ConfiguracoesScreen> {
             return ListView(
               padding: const EdgeInsets.symmetric(vertical: 8),
               children: [
-                ListTile(
-                  leading: const Icon(Icons.person_outline,
-                      color: AppColors.textPrimary),
-                  title: const Text('Editar perfil',
-                      style: TextStyle(color: AppColors.textPrimary)),
-                  subtitle: const Text('Nome, telefone e foto',
-                      style: TextStyle(color: AppColors.textMuted)),
-                  trailing: const Icon(Icons.chevron_right,
-                      color: AppColors.textMuted),
+                const SettingsSectionHeader(title: 'Perfil'),
+                SettingsMenuTile(
+                  icon: Icons.person_outline,
+                  title: 'Editar perfil',
                   onTap: () => context.push('/configuracoes/editar-perfil',
                       extra: usuario),
                 ),
-                const Divider(height: 1),
-                ListTile(
-                  leading:
-                      const Icon(Icons.logout, color: AppColors.textPrimary),
-                  title: const Text('Sair da conta',
-                      style: TextStyle(color: AppColors.textPrimary)),
+                const SettingsSectionHeader(title: 'Aplicativo'),
+                SettingsMenuTile(
+                  icon: Icons.palette_outlined,
+                  title: 'Tema do aplicativo',
+                  onTap: () => context.push('/configuracoes/tema'),
+                ),
+                const SettingsSectionHeader(title: 'Conta'),
+                SettingsMenuTile(
+                  icon: Icons.logout,
+                  title: 'Sair da conta',
                   onTap: _handleSair,
                 ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: _excluindo
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
+                SettingsMenuTile(
+                  icon: Icons.delete_forever_outlined,
+                  title: 'Excluir conta',
+                  isDestructive: true,
+                  isEnabled: !_excluindo,
+                  trailing: _excluindo
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: AppColors.error),
+                              strokeWidth: 2, color: colors.error),
                         )
-                      : const Icon(Icons.delete_forever_outlined,
-                          color: AppColors.error),
-                  title: const Text('Excluir conta',
-                      style: TextStyle(color: AppColors.error)),
-                  subtitle: const Text(
-                    'Remove sua conta e todos os seus pets permanentemente',
-                    style: TextStyle(color: AppColors.textMuted),
-                  ),
-                  onTap: _excluindo ? null : _confirmarExclusaoConta,
+                      : null,
+                  onTap: _confirmarExclusaoConta,
                 ),
               ],
             );

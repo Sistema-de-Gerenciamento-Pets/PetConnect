@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_palette.dart';
 import '../../../../core/utils/br_date.dart';
 import '../../domain/pet.dart';
 import 'fullscreen_image_viewer.dart';
@@ -22,6 +22,7 @@ class PetProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final idade = idadeEmAnos(pet.dataNascimento);
     final especieRaca =
         [pet.especie, pet.raca].where((s) => s.isNotEmpty).join(' · ');
@@ -63,8 +64,8 @@ class PetProfileHeader extends StatelessWidget {
               bottom: -_avatarRadius,
               child: Container(
                 padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  color: AppColors.background,
+                decoration: BoxDecoration(
+                  color: colors.background,
                   shape: BoxShape.circle,
                 ),
                 child: PetAvatar(
@@ -84,10 +85,10 @@ class PetProfileHeader extends StatelessWidget {
             children: [
               Text(
                 pet.nome,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: colors.textPrimary,
                 ),
               ),
               const SizedBox(height: 10),
@@ -114,9 +115,7 @@ class PetProfileHeader extends StatelessWidget {
                     icon: pet.vacinado
                         ? Icons.check_circle_outline
                         : Icons.error_outline,
-                    color: pet.vacinado
-                        ? const Color(0xFF2E7D32)
-                        : AppColors.error,
+                    tone: pet.vacinado ? _ChipTone.success : _ChipTone.error,
                   ),
                 ],
               ),
@@ -128,20 +127,28 @@ class PetProfileHeader extends StatelessWidget {
   }
 }
 
+enum _ChipTone { neutro, success, error }
+
 class _InfoChip extends StatelessWidget {
-  const _InfoChip({required this.text, this.icon, this.color});
+  const _InfoChip(
+      {required this.text, this.icon, this.tone = _ChipTone.neutro});
 
   final String text;
   final IconData? icon;
-  final Color? color;
+  final _ChipTone tone;
 
   @override
   Widget build(BuildContext context) {
-    final cor = color ?? AppColors.textPrimary;
+    final colors = context.colors;
+    final cor = switch (tone) {
+      _ChipTone.success => colors.success,
+      _ChipTone.error => colors.error,
+      _ChipTone.neutro => colors.textPrimary,
+    };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_palette.dart';
+import '../../../../core/widgets/settings_menu_tile.dart';
 
 /// Ações secundárias do perfil do pet — Localização/avistamento (RF31-32) e
 /// Configurações **do pet** (nunca do tutor — bug corrigido em
@@ -11,6 +12,9 @@ import '../../../../core/theme/app_colors.dart';
 /// tela real no app ainda; criar um item que não leva a lugar nenhum seria
 /// uma feature falsa, então ficam de fora por ora (ver sugestão de roadmap
 /// no relatório da PR).
+///
+/// Reaproveita [SettingsMenuTile] (mesmo componente dos menus de
+/// configurações) — mesmo padrão visual em todo o app.
 class PetSecondaryActions extends StatelessWidget {
   const PetSecondaryActions({super.key, required this.petId});
 
@@ -19,45 +23,27 @@ class PetSecondaryActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.surface,
+      color: context.colors.surface,
       borderRadius: BorderRadius.circular(20),
       child: Column(
         children: [
-          _SecondaryActionTile(
+          SettingsMenuTile(
             icon: Icons.location_on_outlined,
-            label: 'Localização',
+            title: 'Localização',
             onTap: () => context.push('/pet/$petId/localizacao'),
           ),
-          const Divider(height: 1, indent: 56, endIndent: 16),
-          _SecondaryActionTile(
+          Divider(
+              height: 1,
+              indent: 56,
+              endIndent: 16,
+              color: context.colors.divider),
+          SettingsMenuTile(
             icon: Icons.settings_outlined,
-            label: 'Configurações',
+            title: 'Configurações',
             onTap: () => context.push('/pet/$petId/configuracoes'),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _SecondaryActionTile extends StatelessWidget {
-  const _SecondaryActionTile({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(icon, color: AppColors.textPrimary),
-      title: Text(label, style: const TextStyle(color: AppColors.textPrimary)),
-      trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
-      onTap: onTap,
     );
   }
 }

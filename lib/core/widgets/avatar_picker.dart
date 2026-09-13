@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../theme/app_palette.dart';
 
 /// Avatar circular com um botão de câmera sobreposto — usado para escolher a
 /// foto do pet e a foto do tutor, reaproveitando o mesmo tratamento visual.
@@ -22,17 +22,18 @@ class AvatarPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return GestureDetector(
       onTap: enviando ? null : onTap,
       child: Stack(
         children: [
           CircleAvatar(
             radius: radius,
-            backgroundColor: AppColors.surface,
+            backgroundColor: colors.surface,
             backgroundImage: fotoUrl != null ? NetworkImage(fotoUrl!) : null,
             child: fotoUrl == null
                 ? Icon(placeholderIcon,
-                    size: radius * 0.85, color: AppColors.brandMedium)
+                    size: radius * 0.85, color: colors.brandMedium)
                 : null,
           ),
           if (enviando)
@@ -53,9 +54,9 @@ class AvatarPicker extends StatelessWidget {
               right: 0,
               child: CircleAvatar(
                 radius: radius * 0.32,
-                backgroundColor: AppColors.brandDark,
+                backgroundColor: colors.brandDark,
                 child: Icon(Icons.camera_alt,
-                    size: radius * 0.32, color: AppColors.textOnBrand),
+                    size: radius * 0.32, color: colors.textOnBrand),
               ),
             ),
         ],

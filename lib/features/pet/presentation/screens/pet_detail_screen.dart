@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_palette.dart';
 import '../../../usuario/presentation/providers/auth_providers.dart';
 import '../providers/pet_providers.dart';
 import '../widgets/pet_feature_grid.dart';
@@ -28,29 +28,26 @@ class PetDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final petAsync = ref.watch(petProvider(petId));
     final uid = ref.watch(currentUsuarioProvider).valueOrNull?.id;
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-      ),
+      backgroundColor: colors.background,
+      appBar: AppBar(),
       body: SafeArea(
         child: petAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => const Center(
+          error: (_, __) => Center(
             child: Text('Não foi possível carregar este pet.',
-                style: TextStyle(color: AppColors.error)),
+                style: TextStyle(color: colors.error)),
           ),
           data: (pet) {
             if (pet == null || pet.userId != uid) {
-              return const Center(
+              return Center(
                 child: Padding(
-                  padding: EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(24),
                   child: Text(
                     'Pet não encontrado.',
-                    style: TextStyle(color: AppColors.textMuted),
+                    style: TextStyle(color: colors.textMuted),
                   ),
                 ),
               );

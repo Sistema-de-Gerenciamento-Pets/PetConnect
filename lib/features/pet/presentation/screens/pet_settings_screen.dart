@@ -5,8 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_palette.dart';
 import '../../../../core/utils/upload_error.dart';
+import '../../../../core/widgets/settings_menu_tile.dart';
 import '../../../usuario/presentation/providers/auth_providers.dart';
 import '../../domain/pet.dart';
 import '../providers/anexo_providers.dart';
@@ -24,7 +25,10 @@ const _tamanhoMaximoCapa = 5 * 1024 * 1024; // 5MB — ver docs/seguranca.md.
 /// do tutor).
 ///
 /// Editar e excluir, que antes ficavam expostos na tela principal do
-/// perfil, moram só aqui agora.
+/// perfil, moram só aqui agora. Menu padronizado (ver
+/// docs/features/theme-and-settings-menu.md) — a seção de capa foge do
+/// padrão ícone+título+chevron de propósito, por não ser uma navegação
+/// simples (tem prévia visual e mais de uma ação).
 class PetSettingsScreen extends ConsumerStatefulWidget {
   const PetSettingsScreen({super.key, required this.petId});
 
@@ -164,6 +168,7 @@ class _PetSettingsScreenState extends ConsumerState<PetSettingsScreen> {
   }
 
   Future<void> _confirmarExclusao(Pet pet) async {
+    final colors = context.colors;
     final confirmou = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -177,8 +182,7 @@ class _PetSettingsScreenState extends ConsumerState<PetSettingsScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child:
-                const Text('Excluir', style: TextStyle(color: AppColors.error)),
+            child: Text('Excluir', style: TextStyle(color: colors.error)),
           ),
         ],
       ),
@@ -208,32 +212,29 @@ class _PetSettingsScreenState extends ConsumerState<PetSettingsScreen> {
   Widget build(BuildContext context) {
     final petAsync = ref.watch(petProvider(widget.petId));
     final pet = petAsync.valueOrNull;
+    final colors = context.colors;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: colors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        title: Text(
-          pet != null ? 'Configurações de ${pet.nome}' : 'Configurações do Pet',
-          style: const TextStyle(color: AppColors.textPrimary),
-        ),
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        title: Text(pet != null
+            ? 'Configurações de ${pet.nome}'
+            : 'Configurações do Pet'),
       ),
       body: SafeArea(
         child: petAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => const Center(
+          error: (_, __) => Center(
             child: Text('Não foi possível carregar este pet.',
-                style: TextStyle(color: AppColors.error)),
+                style: TextStyle(color: colors.error)),
           ),
           data: (pet) {
             if (pet == null) {
-              return const Center(
+              return Center(
                 child: Padding(
-                  padding: EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(24),
                   child: Text('Pet não encontrado.',
-                      style: TextStyle(color: AppColors.textMuted)),
+                      style: TextStyle(color: colors.textMuted)),
                 ),
               );
             }
@@ -243,31 +244,16 @@ class _PetSettingsScreenState extends ConsumerState<PetSettingsScreen> {
             return ListView(
               padding: const EdgeInsets.symmetric(vertical: 8),
               children: [
-                ListTile(
-                  leading: const Icon(Icons.edit_outlined,
-                      color: AppColors.textPrimary),
-                  title: const Text('Editar perfil',
-                      style: TextStyle(color: AppColors.textPrimary)),
-                  subtitle: Text('Dados de ${pet.nome}',
-                      style: const TextStyle(color: AppColors.textMuted)),
-                  trailing: const Icon(Icons.chevron_right,
-                      color: AppColors.textMuted),
+                const SettingsSectionHeader(title: 'Perfil'),
+                SettingsMenuTile(
+                  icon: Icons.edit_outlined,
+                  title: 'Editar perfil',
                   onTap: () =>
                       context.push('/pet/${pet.id}/editar', extra: pet),
                 ),
-                const Divider(height: 1),
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Text(
-                    'Foto de capa',
-                    style: TextStyle(
-                        color: AppColors.textMuted,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13),
-                  ),
-                ),
+                const SettingsSectionHeader(title: 'Foto de capa'),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: PetCoverImage(
@@ -278,7 +264,7 @@ class _PetSettingsScreenState extends ConsumerState<PetSettingsScreen> {
                   ),
                 ),
                 Padding(
-                  padding: EdgeInsets.fromLTRB(16, 16, 16, temCapa ? 8 : 16),
+                  padding: EdgeInsets.fromLTRB(20, 12, 20, temCapa ? 8 : 12),
                   child: Row(
                     children: [
                       Expanded(
@@ -304,16 +290,16 @@ class _PetSettingsScreenState extends ConsumerState<PetSettingsScreen> {
                                 ? null
                                 : () => _removerCapa(pet),
                             icon: _removendoCapa
-                                ? const SizedBox(
+                                ? SizedBox(
                                     width: 16,
                                     height: 16,
                                     child: CircularProgressIndicator(
-                                        strokeWidth: 2, color: AppColors.error),
+                                        strokeWidth: 2, color: colors.error),
                                   )
-                                : const Icon(Icons.delete_outline,
-                                    color: AppColors.error),
-                            label: const Text('Remover',
-                                style: TextStyle(color: AppColors.error)),
+                                : Icon(Icons.delete_outline,
+                                    color: colors.error),
+                            label: Text('Remover',
+                                style: TextStyle(color: colors.error)),
                           ),
                         ),
                       ],
@@ -322,7 +308,7 @@ class _PetSettingsScreenState extends ConsumerState<PetSettingsScreen> {
                 ),
                 if (temCapa)
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                     child: OutlinedButton.icon(
                       onPressed: _ocupadoComCapa
                           ? null
@@ -339,27 +325,25 @@ class _PetSettingsScreenState extends ConsumerState<PetSettingsScreen> {
                   ),
                 if (_error != null)
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                     child: Text(_error!,
-                        style: const TextStyle(
-                            color: AppColors.error, fontSize: 13)),
+                        style: TextStyle(color: colors.error, fontSize: 13)),
                   ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: _excluindo
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
+                const SettingsSectionHeader(title: 'Conta'),
+                SettingsMenuTile(
+                  icon: Icons.delete_forever_outlined,
+                  title: 'Excluir perfil do pet',
+                  isDestructive: true,
+                  isEnabled: !_excluindo,
+                  trailing: _excluindo
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: AppColors.error),
+                              strokeWidth: 2, color: colors.error),
                         )
-                      : const Icon(Icons.delete_forever_outlined,
-                          color: AppColors.error),
-                  title: const Text('Excluir perfil do pet',
-                      style: TextStyle(color: AppColors.error)),
-                  subtitle: Text('Remove ${pet.nome} do aplicativo',
-                      style: const TextStyle(color: AppColors.textMuted)),
-                  onTap: _excluindo ? null : () => _confirmarExclusao(pet),
+                      : null,
+                  onTap: () => _confirmarExclusao(pet),
                 ),
               ],
             );

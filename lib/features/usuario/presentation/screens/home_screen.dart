@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_palette.dart';
 import '../../../pet/presentation/providers/pet_providers.dart';
 import '../../../pet/presentation/widgets/pet_card.dart';
 import '../../domain/usuario.dart';
@@ -42,6 +42,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final usuarioAsync = ref.watch(currentUsuarioProvider);
     final petsAsync = ref.watch(petsProvider);
+    final colors = context.colors;
 
     return PopScope(
       canPop: false,
@@ -50,21 +51,21 @@ class HomeScreen extends ConsumerWidget {
         await _handleSair(context, ref);
       },
       child: Scaffold(
-        backgroundColor: AppColors.homeBackdrop,
+        backgroundColor: colors.homeBackdrop,
         body: SafeArea(
           child: usuarioAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const Center(
+            error: (_, __) => Center(
               child: Text(
                 'Não foi possível carregar seus dados.',
-                style: TextStyle(color: AppColors.error),
+                style: TextStyle(color: colors.error),
               ),
             ),
             data: (usuario) => Padding(
               padding: const EdgeInsets.all(16),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: colors.cardBackground,
                   borderRadius: BorderRadius.circular(32),
                   boxShadow: [
                     BoxShadow(
@@ -87,8 +88,8 @@ class HomeScreen extends ConsumerWidget {
                           onTap: () => context.push('/pet/novo')),
                     ),
                     const SizedBox(height: 24),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 24),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
@@ -96,7 +97,7 @@ class HomeScreen extends ConsumerWidget {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
+                            color: colors.textPrimary,
                           ),
                         ),
                       ),
@@ -106,10 +107,10 @@ class HomeScreen extends ConsumerWidget {
                       child: petsAsync.when(
                         loading: () =>
                             const Center(child: CircularProgressIndicator()),
-                        error: (_, __) => const Center(
+                        error: (_, __) => Center(
                           child: Text(
                             'Não foi possível carregar seus pets.',
-                            style: TextStyle(color: AppColors.error),
+                            style: TextStyle(color: colors.error),
                           ),
                         ),
                         data: (pets) {
@@ -123,15 +124,14 @@ class HomeScreen extends ConsumerWidget {
                               onRefresh: atualizar,
                               child: ListView(
                                 physics: const AlwaysScrollableScrollPhysics(),
-                                children: const [
-                                  SizedBox(height: 120),
+                                children: [
+                                  const SizedBox(height: 120),
                                   Padding(
-                                    padding: EdgeInsets.all(24),
+                                    padding: const EdgeInsets.all(24),
                                     child: Text(
                                       'Você ainda não cadastrou nenhum pet.\nToque em "Adicionar Novo Pet" para começar.',
                                       textAlign: TextAlign.center,
-                                      style:
-                                          TextStyle(color: AppColors.textMuted),
+                                      style: TextStyle(color: colors.textMuted),
                                     ),
                                   ),
                                 ],
@@ -182,6 +182,7 @@ class _Cabecalho extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final primeiroNome = usuario != null && usuario!.nome.isNotEmpty
         ? usuario!.nome.trim().split(' ').first
         : null;
@@ -191,11 +192,11 @@ class _Cabecalho extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 32,
-          backgroundColor: AppColors.background,
+          backgroundColor: colors.background,
           backgroundImage:
               usuario?.foto != null ? NetworkImage(usuario!.foto!) : null,
           child: usuario?.foto == null
-              ? const Icon(Icons.person, size: 32, color: AppColors.brandMedium)
+              ? Icon(Icons.person, size: 32, color: colors.brandMedium)
               : null,
         ),
         const SizedBox(width: 16),
@@ -205,16 +206,16 @@ class _Cabecalho extends StatelessWidget {
             children: [
               Text(
                 primeiroNome != null ? 'Olá, $primeiroNome!' : 'Olá!',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: colors.textPrimary,
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Selecione um pet para acessar o perfil',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                style: TextStyle(color: colors.textMuted, fontSize: 13),
               ),
             ],
           ),
@@ -239,15 +240,16 @@ class _BotaoCircular extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Material(
-      color: AppColors.background,
+      color: colors.background,
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(10),
-          child: Icon(icon, color: AppColors.textPrimary, size: 22),
+          child: Icon(icon, color: colors.textPrimary, size: 22),
         ),
       ),
     );
@@ -261,22 +263,28 @@ class _AdicionarPetCta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    // Índice 2 da paleta cíclica é sempre o tom "verde" em qualquer modo —
+    // reaproveita em vez de fixar uma cor própria só pra este card.
+    final fundo = colors.petCardBackgrounds[2];
+    final destaque = colors.petCardAccents[2];
+
     return Material(
-      color: const Color(0xFFE8F5E9),
+      color: fundo,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: onTap,
-        child: const Padding(
-          padding: EdgeInsets.all(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
           child: Row(
             children: [
               CircleAvatar(
                 radius: 22,
-                backgroundColor: Colors.white,
-                child: Icon(Icons.add, color: Color(0xFF43A047)),
+                backgroundColor: colors.cardBackground,
+                child: Icon(Icons.add, color: destaque),
               ),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -285,18 +293,17 @@ class _AdicionarPetCta extends StatelessWidget {
                       'Adicionar Novo Pet',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF2E7D32),
+                        color: colors.success,
                       ),
                     ),
                     Text(
                       'Cadastre um novo pet no app',
-                      style:
-                          TextStyle(color: AppColors.textMuted, fontSize: 12),
+                      style: TextStyle(color: colors.textMuted, fontSize: 12),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward, color: Color(0xFF43A047)),
+              Icon(Icons.arrow_forward, color: destaque),
             ],
           ),
         ),
@@ -310,24 +317,24 @@ class _RodapeInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.homeBackdrop,
+        color: colors.homeBackdrop,
         borderRadius: BorderRadius.circular(999),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.verified_user_outlined,
-              color: Color(0xFF43A047), size: 20),
-          SizedBox(width: 12),
+          Icon(Icons.verified_user_outlined, color: colors.success, size: 20),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               'Seus pets, cuidados e momentos especiais, todos em um só lugar.',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+              style: TextStyle(color: colors.textMuted, fontSize: 12),
             ),
           ),
-          Icon(Icons.favorite, color: Color(0xFF43A047), size: 18),
+          Icon(Icons.favorite, color: colors.success, size: 18),
         ],
       ),
     );

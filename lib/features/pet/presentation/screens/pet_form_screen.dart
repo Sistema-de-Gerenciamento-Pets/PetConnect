@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_palette.dart';
 import '../../../../core/utils/br_date.dart';
 import '../../../../core/utils/upload_error.dart';
 import '../../../../core/widgets/avatar_picker.dart';
@@ -176,16 +176,11 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: colors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        title: Text(
-          widget.isEditing ? 'Editar pet' : 'Novo pet',
-          style: const TextStyle(color: AppColors.textPrimary),
-        ),
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        title: Text(widget.isEditing ? 'Editar pet' : 'Novo pet'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -260,37 +255,36 @@ class _PetFormScreenState extends ConsumerState<PetFormScreen> {
                   controller: _dataNascimentoController,
                   readOnly: true,
                   onTap: _pickDataNascimento,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Data de nascimento:',
                     suffixIcon:
-                        Icon(Icons.calendar_today, color: AppColors.textMuted),
+                        Icon(Icons.calendar_today, color: colors.textMuted),
                   ),
                 ),
                 const SizedBox(height: 16),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Vacinado',
-                      style: TextStyle(color: AppColors.textPrimary)),
+                  title: Text('Vacinado',
+                      style: TextStyle(color: colors.textPrimary)),
                   value: _vacinado,
-                  activeThumbColor: AppColors.brandDark,
+                  activeThumbColor: colors.brandDark,
                   onChanged: (value) => setState(() => _vacinado = value),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 12),
                   Text(_error!,
-                      style: const TextStyle(
-                          color: AppColors.error, fontSize: 13)),
+                      style: TextStyle(color: colors.error, fontSize: 13)),
                 ],
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _submitting ? null : _handleSalvar,
                   child: _submitting
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: AppColors.textOnBrand,
+                            color: colors.textOnBrand,
                           ),
                         )
                       : const Text('SALVAR'),
