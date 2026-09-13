@@ -3,12 +3,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 
-/// Ações secundárias do perfil do pet — hoje só as que já existem de fato
-/// (Localização/avistamento, RF31-32, e Configurações da conta). O briefing
-/// de layout sugeria também "Ajuda" e "Acessibilidade", mas nenhuma das
-/// duas tem uma tela real no app ainda; criar um item que não leva a lugar
-/// nenhum seria uma feature falsa, então ficam de fora por ora (ver
-/// sugestão de roadmap no relatório da PR).
+/// Ações secundárias do perfil do pet — Localização/avistamento (RF31-32) e
+/// Configurações **do pet** (nunca do tutor — bug corrigido em
+/// prompt_correcao_configuracoes_perfil_pet.md, 2026-09-13: antes este
+/// botão abria as configurações da conta). O briefing de layout original
+/// sugeria também "Ajuda" e "Acessibilidade", mas nenhuma das duas tem uma
+/// tela real no app ainda; criar um item que não leva a lugar nenhum seria
+/// uma feature falsa, então ficam de fora por ora (ver sugestão de roadmap
+/// no relatório da PR).
 class PetSecondaryActions extends StatelessWidget {
   const PetSecondaryActions({super.key, required this.petId});
 
@@ -30,7 +32,7 @@ class PetSecondaryActions extends StatelessWidget {
           _SecondaryActionTile(
             icon: Icons.settings_outlined,
             label: 'Configurações',
-            onTap: () => context.push('/configuracoes'),
+            onTap: () => context.push('/pet/$petId/configuracoes'),
           ),
         ],
       ),

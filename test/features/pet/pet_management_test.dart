@@ -11,6 +11,7 @@ import 'package:pet_connect/features/pet/domain/pet.dart';
 import 'package:pet_connect/features/pet/presentation/providers/pet_providers.dart';
 import 'package:pet_connect/features/pet/presentation/screens/pet_detail_screen.dart';
 import 'package:pet_connect/features/pet/presentation/screens/pet_form_screen.dart';
+import 'package:pet_connect/features/pet/presentation/screens/pet_settings_screen.dart';
 import 'package:pet_connect/features/usuario/domain/usuario.dart';
 import 'package:pet_connect/features/usuario/presentation/providers/auth_providers.dart';
 import 'package:pet_connect/features/usuario/presentation/screens/home_screen.dart';
@@ -43,6 +44,7 @@ void main() {
       initialLocation: '/',
       routes: [
         GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+        GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
         GoRoute(
             path: '/pet/novo',
             builder: (context, state) => const PetFormScreen()),
@@ -54,6 +56,11 @@ void main() {
         GoRoute(
           path: '/pet/:id/editar',
           builder: (context, state) => PetFormScreen(pet: state.extra as Pet?),
+        ),
+        GoRoute(
+          path: '/pet/:id/configuracoes',
+          builder: (context, state) =>
+              PetSettingsScreen(petId: state.pathParameters['id']!),
         ),
       ],
     );
@@ -102,8 +109,16 @@ void main() {
 
     expect(find.text('Cachorro'), findsOneWidget);
 
+    // Editar e excluir moraram para Configurações do Pet (correção de
+    // 2026-09-13) — não ficam mais expostos na tela principal do perfil.
+    await tester.tap(find.text('Configurações'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Configurações de Rex'), findsOneWidget,
+        reason: 'configurações do PET, nunca do tutor');
+
     // Editar pet (RF13).
-    await tester.tap(find.widgetWithText(ElevatedButton, 'EDITAR'));
+    await tester.tap(find.text('Editar perfil'));
     await tester.pumpAndSettle();
 
     expect(find.text('Editar pet'), findsOneWidget);
@@ -114,13 +129,17 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'SALVAR'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Rex Editado'), findsOneWidget);
+    // Salvar volta para as Configurações (de onde "Editar perfil" foi
+    // aberto) — contexto do mesmo pet, agora com o nome atualizado.
+    expect(find.text('Configurações de Rex Editado'), findsOneWidget);
 
-    // Excluir pet, com confirmação (RF14, CT11).
-    await tester.tap(find.widgetWithText(OutlinedButton, 'EXCLUIR'));
+    // Excluir pet, com confirmação (RF14, CT11) — só aqui, nunca na tela
+    // principal do perfil.
+    await tester.tap(find.text('Excluir perfil do pet'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('excluir Rex Editado'), findsOneWidget);
+    expect(
+        find.textContaining('Excluir o perfil de Rex Editado'), findsOneWidget);
 
     await tester.tap(find.text('Excluir'));
     await tester.pumpAndSettle();
