@@ -118,8 +118,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Olá, Aleksander!'), findsOneWidget);
-      expect(find.text('Selecione um pet para acessar o perfil'),
-          findsOneWidget);
+      expect(
+          find.text('Selecione um pet para acessar o perfil'), findsOneWidget);
       expect(find.byIcon(Icons.person), findsOneWidget);
       expect(find.byIcon(Icons.more_vert), findsOneWidget);
       // O antigo ícone de engrenagem foi substituído pelo "⋮".
@@ -151,8 +151,7 @@ void main() {
   });
 
   group('HomeScreen — "Adicionar pet"', () {
-    testWidgets('aparece na mesma linha do título "Meus Pets"',
-        (tester) async {
+    testWidgets('aparece na mesma linha do título "Meus Pets"', (tester) async {
       final repo = FakePetRepository();
 
       await tester.pumpWidget(_appPara(repo));
@@ -330,8 +329,8 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.text('Não foi possível carregar seus dados.'),
-          findsOneWidget);
+      expect(
+          find.text('Não foi possível carregar seus dados.'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -341,13 +340,12 @@ void main() {
 
       await tester.pumpWidget(_appPara(
         repo,
-        overridePets: petsProvider
-            .overrideWith((ref) => Stream.error(Exception('boom'))),
+        overridePets:
+            petsProvider.overrideWith((ref) => Stream.error(Exception('boom'))),
       ));
       await tester.pumpAndSettle();
 
-      expect(find.text('Não foi possível carregar seus pets.'),
-          findsOneWidget);
+      expect(find.text('Não foi possível carregar seus pets.'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });
