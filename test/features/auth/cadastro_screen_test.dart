@@ -515,4 +515,66 @@ void main() {
       expect(physics, isA<NeverScrollableScrollPhysics>());
     });
   });
+
+  group('CadastroScreen — sobreposição não se desfaz ao focar um campo', () {
+    // Regressão de 2026-09-14, 2ª rodada: com o cabeçalho fora do
+    // SingleChildScrollView (1ª versão desta correção), focar um campo
+    // fazia o Flutter chamar Scrollable.ensureVisible() internamente
+    // (EditableText.bringIntoView) — uma rolagem PROGRAMÁTICA que
+    // NeverScrollableScrollPhysics não bloqueia (só bloqueia arrasto do
+    // usuário) — e isso descolava o card do cabeçalho fixo. Agora os dois
+    // ficam dentro do mesmo scroll, então qualquer deslocamento move os
+    // dois juntos.
+    testWidgets(
+        'o título do card continua abaixo da base do cabeçalho depois de focar cada campo',
+        (tester) async {
+      await _abrirTela(tester, _FakeUsuarioRepository());
+      await tester.pumpAndSettle();
+
+      double baseCabecalho() =>
+          tester.getBottomLeft(find.text('PetConnect')).dy;
+      double topoCard() => tester.getTopLeft(find.text('Crie sua conta')).dy;
+
+      expect(topoCard(), lessThan(baseCabecalho()),
+          reason: 'estado inicial: o título "Crie sua conta" deveria estar '
+              'acima da base do cabeçalho — prova de que o card está '
+              'sobreposto, não solto abaixo dele');
+
+      for (final label in [
+        'Nome completo',
+        'E-mail',
+        'Telefone',
+        'Senha',
+        'Confirmar senha',
+      ]) {
+        await tester.tap(find.widgetWithText(TextFormField, label).first);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+
+        expect(topoCard(), lessThan(baseCabecalho()),
+            reason: 'a sobreposição deveria continuar depois de focar '
+                '"$label" — cabeçalho e card se movem sempre juntos');
+      }
+    });
+
+    testWidgets(
+        'focar um campo não move a posição de rolagem (sem ensureVisible programático perceptível)',
+        (tester) async {
+      await _abrirTela(tester, _FakeUsuarioRepository());
+      await tester.pumpAndSettle();
+
+      final posicao =
+          tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+      expect(posicao.pixels, 0);
+
+      await tester
+          .tap(find.widgetWithText(TextFormField, 'Confirmar senha').first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(posicao.pixels, 0,
+          reason: 'focar o último campo (o mais provável de disparar '
+              'ensureVisible) não deveria mover a rolagem');
+    });
+  });
 }
