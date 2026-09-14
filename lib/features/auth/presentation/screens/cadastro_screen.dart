@@ -199,11 +199,19 @@ class _CadastroScreenState extends ConsumerState<CadastroScreen> {
               // conteúdo cabe inteiro e isto se comporta como uma Column
               // comum, sem nenhum indício visual de rolagem.
               child: SingleChildScrollView(
+                // NeverScrollableScrollPhysics: o usuário pediu
+                // explicitamente que nada nesta tela se mexa ao toque —
+                // mesmo que a rede de segurança contra overflow ainda
+                // exista (o conteúdo simplesmente cabe, então isto nunca
+                // chega a fazer diferença visível em uso normal), o card
+                // não pode ser arrastável (correção de 2026-09-14, vídeo
+                // mostrando o card "atrás" do cabeçalho ao arrastar).
+                physics: const NeverScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                 child: Transform.translate(
                   offset: const Offset(0, -24),
                   child: Container(
-                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 28),
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
                     decoration: const BoxDecoration(
                       color: AppColors.background,
                       borderRadius: BorderRadius.all(Radius.circular(32)),
@@ -216,7 +224,7 @@ class _CadastroScreenState extends ConsumerState<CadastroScreen> {
                           'Crie sua conta',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: 21,
                             fontWeight: FontWeight.bold,
                             color: AppColors.textPrimary,
                           ),
@@ -229,18 +237,19 @@ class _CadastroScreenState extends ConsumerState<CadastroScreen> {
                         AnimatedSize(
                           duration: const Duration(milliseconds: 200),
                           child: tecladoAberto
-                              ? const SizedBox(height: 12)
+                              ? const SizedBox(height: 8)
                               : const Padding(
-                                  padding: EdgeInsets.only(top: 6),
+                                  padding: EdgeInsets.only(top: 2),
                                   child: Column(
                                     children: [
                                       Text(
                                         'Cadastre seus dados para começar.',
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                            color: AppColors.textMuted),
+                                            color: AppColors.textMuted,
+                                            fontSize: 13),
                                       ),
-                                      SizedBox(height: 18),
+                                      SizedBox(height: 6),
                                     ],
                                   ),
                                 ),
@@ -261,7 +270,7 @@ class _CadastroScreenState extends ConsumerState<CadastroScreen> {
                                 onFieldSubmitted: (_) => FocusScope.of(context)
                                     .requestFocus(_emailFocus),
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 4),
                               CadastroTextField(
                                 label: 'E-mail',
                                 controller: _emailController,
@@ -273,7 +282,7 @@ class _CadastroScreenState extends ConsumerState<CadastroScreen> {
                                 onFieldSubmitted: (_) => FocusScope.of(context)
                                     .requestFocus(_telefoneFocus),
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 4),
                               CadastroTextField(
                                 label: 'Telefone',
                                 controller: _telefoneController,
@@ -288,7 +297,7 @@ class _CadastroScreenState extends ConsumerState<CadastroScreen> {
                                 onFieldSubmitted: (_) => FocusScope.of(context)
                                     .requestFocus(_senhaFocus),
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 4),
                               CadastroTextField(
                                 label: 'Senha',
                                 controller: _senhaController,
@@ -328,13 +337,13 @@ class _CadastroScreenState extends ConsumerState<CadastroScreen> {
                                             _senhaController.text))
                                     ? Padding(
                                         padding: const EdgeInsets.fromLTRB(
-                                            4, 8, 4, 0),
+                                            4, 4, 4, 0),
                                         child: PasswordRequirementsChecklist(
                                             senha: _senhaController.text),
                                       )
                                     : const SizedBox(width: double.infinity),
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 4),
                               CadastroTextField(
                                 label: 'Confirmar senha',
                                 controller: _confirmarSenhaController,
@@ -369,7 +378,7 @@ class _CadastroScreenState extends ConsumerState<CadastroScreen> {
                                 },
                               ),
                               if (_erroGeral != null) ...[
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 8),
                                 Text(
                                   _erroGeral!,
                                   textAlign: TextAlign.center,
@@ -377,21 +386,40 @@ class _CadastroScreenState extends ConsumerState<CadastroScreen> {
                                       color: AppColors.error, fontSize: 13),
                                 ),
                               ],
-                              const SizedBox(height: 20),
-                              ElevatedButton(
-                                onPressed: (_submitting || !_formularioValido)
-                                    ? null
-                                    : _handleCadastro,
-                                child: _submitting
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: AppColors.textOnBrand,
+                              const SizedBox(height: 10),
+                              // Botão mais baixo que o padrão do app (48 em
+                              // vez de 56) só nesta tela, via Theme local —
+                              // ajuda a caber sem rolar em aparelhos comuns
+                              // (360x800) sem afetar o botão em nenhuma
+                              // outra tela do app.
+                              Theme(
+                                data: Theme.of(context).copyWith(
+                                  elevatedButtonTheme: ElevatedButtonThemeData(
+                                    style: Theme.of(context)
+                                        .elevatedButtonTheme
+                                        .style
+                                        ?.copyWith(
+                                          minimumSize:
+                                              const WidgetStatePropertyAll(
+                                                  Size.fromHeight(48)),
                                         ),
-                                      )
-                                    : const Text('CRIAR CONTA'),
+                                  ),
+                                ),
+                                child: ElevatedButton(
+                                  onPressed: (_submitting || !_formularioValido)
+                                      ? null
+                                      : _handleCadastro,
+                                  child: _submitting
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: AppColors.textOnBrand,
+                                          ),
+                                        )
+                                      : const Text('CRIAR CONTA'),
+                                ),
                               ),
                             ],
                           ),
@@ -427,7 +455,7 @@ class _CadastroHeader extends StatelessWidget {
       curve: Curves.easeOut,
       width: double.infinity,
       padding:
-          EdgeInsets.fromLTRB(20, compacto ? 4 : 28, 20, compacto ? 12 : 44),
+          EdgeInsets.fromLTRB(20, compacto ? 4 : 12, 20, compacto ? 12 : 12),
       decoration: const BoxDecoration(
         gradient: AppColors.brandGradient,
         borderRadius: BorderRadius.only(
@@ -474,14 +502,14 @@ class _CadastroHeader extends StatelessWidget {
                     child: _BotaoVoltar(onBack: onBack),
                   ),
                   Image.asset('assets/images/logo.png',
-                      width: 132, height: 132),
-                  const SizedBox(height: 16),
+                      width: 108, height: 108),
+                  const SizedBox(height: 6),
                   const Text(
                     'PetConnect',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: AppColors.textOnBrand,
-                      fontSize: 30,
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
