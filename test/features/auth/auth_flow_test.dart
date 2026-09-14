@@ -82,7 +82,10 @@ void main() {
   final testEmail = 'qa.petconnect.$timestamp@example.com';
   const testNome = 'QA PetConnect';
   const testPrimeiroNome = 'QA';
-  const testSenha = 'senha123';
+  // Precisa atender à política de senha do redesign do cadastro (2026-09-13,
+  // ver docs/features/cadastro-redesign.md): 9+ caracteres, maiúscula,
+  // minúscula, número e caractere especial.
+  const testSenha = 'PetConnect@9';
 
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
