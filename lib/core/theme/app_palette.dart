@@ -27,6 +27,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
     required this.divider,
     required this.petCardBackgrounds,
     required this.petCardAccents,
+    required this.genderFemaleForeground,
+    required this.genderFemaleBackground,
   });
 
   final Color background;
@@ -52,6 +54,12 @@ class AppPalette extends ThemeExtension<AppPalette> {
   /// no perfil do pet — sempre com o mesmo número de itens nas duas listas.
   final List<Color> petCardBackgrounds;
   final List<Color> petCardAccents;
+
+  /// Badge de gênero "Fêmea" (home do tutor) — o de "Macho" reaproveita o
+  /// azul cíclico já existente (`petCardAccents`/`petCardBackgrounds[3]`),
+  /// mas não há nenhum tom de rosa na paleta ainda.
+  final Color genderFemaleForeground;
+  final Color genderFemaleBackground;
 
   static const padrao = AppPalette(
     background: Color(0xFFFBEADD),
@@ -79,6 +87,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
       Color(0xFF43A047),
       Color(0xFF1E88E5),
     ],
+    genderFemaleForeground: Color(0xFFC2185B),
+    genderFemaleBackground: Color(0xFFFCE4EC),
   );
 
   static const claro = AppPalette(
@@ -107,6 +117,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
       Color(0xFF43A047),
       Color(0xFF1E88E5),
     ],
+    genderFemaleForeground: Color(0xFFC2185B),
+    genderFemaleBackground: Color(0xFFFCE4EC),
   );
 
   static const escuro = AppPalette(
@@ -135,6 +147,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
       Color(0xFF81C784),
       Color(0xFF64B5F6),
     ],
+    genderFemaleForeground: Color(0xFFF48FB1),
+    genderFemaleBackground: Color(0xFF3A2530),
   );
 
   @override
@@ -154,6 +168,8 @@ class AppPalette extends ThemeExtension<AppPalette> {
     Color? divider,
     List<Color>? petCardBackgrounds,
     List<Color>? petCardAccents,
+    Color? genderFemaleForeground,
+    Color? genderFemaleBackground,
   }) {
     return AppPalette(
       background: background ?? this.background,
@@ -171,6 +187,10 @@ class AppPalette extends ThemeExtension<AppPalette> {
       divider: divider ?? this.divider,
       petCardBackgrounds: petCardBackgrounds ?? this.petCardBackgrounds,
       petCardAccents: petCardAccents ?? this.petCardAccents,
+      genderFemaleForeground:
+          genderFemaleForeground ?? this.genderFemaleForeground,
+      genderFemaleBackground:
+          genderFemaleBackground ?? this.genderFemaleBackground,
     );
   }
 
@@ -197,6 +217,10 @@ class AppPalette extends ThemeExtension<AppPalette> {
       divider: c(divider, other.divider),
       petCardBackgrounds: cl(petCardBackgrounds, other.petCardBackgrounds),
       petCardAccents: cl(petCardAccents, other.petCardAccents),
+      genderFemaleForeground:
+          c(genderFemaleForeground, other.genderFemaleForeground),
+      genderFemaleBackground:
+          c(genderFemaleBackground, other.genderFemaleBackground),
     );
   }
 }
