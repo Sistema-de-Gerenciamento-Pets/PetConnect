@@ -25,6 +25,12 @@ ponta (conta nova de verdade, depois excluída em Configurações).
       de um campo de texto) não move nada — nem o card, nem o
       cabeçalho; o card nunca aparece "atrás" ou desgrudado do
       cabeçalho marrom
+- [ ] **(2026-09-14, 2ª rodada)** Tocar em CADA campo (Nome, E-mail,
+      Telefone, Senha, Confirmar senha), um por um: o card não "sobe"
+      sozinho, e a sobreposição com a base do cabeçalho continua igual
+      antes e depois de cada toque — esse era o sintoma real que a
+      primeira correção não pegou (rolagem disparada pelo próprio
+      Flutter ao focar o campo, não pelo dedo do usuário)
 
 ### Campos
 

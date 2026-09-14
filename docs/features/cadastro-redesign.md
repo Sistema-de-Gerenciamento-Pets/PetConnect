@@ -332,3 +332,66 @@ existe cenário em que o card fique arrastável). Aparelhos muito antigos/
 pequenos (ex.: 360×640) ainda podem ter alguma sobra de conteúdo
 cortada — aceito conscientemente, já que não são mais representativos
 do parque de aparelhos atual.
+
+## 15. Atualização 2026-09-14 (2ª rodada) — a correção da seção 14 não bastava
+
+> Vídeo do usuário no aparelho físico mostrou o mesmo sintoma
+> persistindo mesmo depois da seção 14: o card ainda aparecia
+> parcialmente atrás do cabeçalho e "descia e subia" sozinho ao focar
+> campos — validado comparando com a tela de Login (mesma classe de
+> bug, corrigida com sucesso em `fix/login-card-sobreposicao-estatica`,
+> confirmada correta pelo usuário).
+
+### Causa raiz real (a da seção 14 era só parte do problema)
+
+A correção da seção 14 tirou o cabeçalho do `SingleChildScrollView`
+(virou uma `Column` externa fixa, só o card ficava num
+`Expanded(SingleChildScrollView(...))` separado) para resolver o
+overflow. Isso resolveu o overflow, mas **quebrou a sobreposição
+visual**: com o cabeçalho fora do scroll, o card passou a flutuar
+*abaixo* dele, sem nenhuma invasão visual — exatamente o que o
+screenshot do usuário mostrou (comparado lado a lado com a print de
+referência do Login, onde o card claramente invade a base do
+cabeçalho).
+
+Pior: mesmo com `physics: NeverScrollableScrollPhysics()` já aplicado,
+o card ainda se movia sozinho ao tocar num campo. Motivo: o Flutter
+chama `Scrollable.ensureVisible()` **internamente**
+(`EditableText.bringIntoView`, disparado ao ganhar foco) para garantir
+que o campo focado fique visível — isso é uma rolagem **programática**,
+que `NeverScrollableScrollPhysics` **não bloqueia** (essa physics só
+bloqueia arrasto do *usuário*, via `shouldAcceptUserOffset`). Medição
+adicional revelou também que a folga real entre conteúdo e viewport em
+360×800 estava em **exatamente 0px** — qualquer variação mínima de
+métrica de fonte num aparelho real (diferente da fonte usada no
+ambiente de teste) já bastava para gerar um overflow residual, dando
+ao `ensureVisible()` uma pequena rolagem de verdade para executar.
+
+### Correção
+
+1. **Cabeçalho e card voltam a ficar dentro do mesmo
+   `SingleChildScrollView`**, como uma única `Column` — exatamente a
+   mesma estrutura da tela de Login (`login_screen.dart`), já validada
+   pelo usuário como correta. Com os dois no mesmo scroll, qualquer
+   tentativa de rolagem (arrasto ou `ensureVisible()` programático)
+   move os dois **juntos** — a sobreposição nunca se desfaz, não importa
+   o que a dispare.
+2. **Sobreposição aumentada de 24 para 32px** — mesmo espírito do ajuste
+   já feito no Login (32→48px), deixando a invasão do card na base do
+   cabeçalho mais nítida.
+3. **Margem de segurança real adicionada**: mais um corte de
+   espaçamento (padding do card, do cabeçalho, e do texto de apoio) até
+   a folga em 360×800 sair de exatamente 0px para **~20px** (medido
+   testando alturas de viewport decrescentes até o ponto exato em que
+   `maxScrollExtent` deixa de ser zero) — absorve variação normal de
+   fonte entre o ambiente de teste e aparelhos reais.
+
+### Testes
+
+Dois testes novos em `cadastro_screen_test.dart`, no grupo "sobreposição
+não se desfaz ao focar um campo": o título "Crie sua conta" continua
+acima da base do cabeçalho (comparação de posição Y) depois de focar
+*cada um* dos 5 campos, um por um; e `ScrollPosition.pixels` permanece
+`0` depois de focar o campo mais no fundo do formulário ("Confirmar
+senha", o mais propenso a disparar `ensureVisible()`). Suíte completa
+(162 testes) revalidada.
