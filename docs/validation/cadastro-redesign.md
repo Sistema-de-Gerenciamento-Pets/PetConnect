@@ -21,6 +21,10 @@ ponta (conta nova de verdade, depois excluída em Configurações).
 - [ ] Cabeçalho encolhe visivelmente quando o teclado abre
 - [ ] Botão voltar do cabeçalho funciona nos dois estados (compacto e
       normal)
+- [ ] **(2026-09-14)** Arrastar o dedo em qualquer ponto da tela (fora
+      de um campo de texto) não move nada — nem o card, nem o
+      cabeçalho; o card nunca aparece "atrás" ou desgrudado do
+      cabeçalho marrom
 
 ### Campos
 

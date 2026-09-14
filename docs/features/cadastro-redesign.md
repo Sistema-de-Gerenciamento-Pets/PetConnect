@@ -278,3 +278,57 @@ Firebase Auth nunca reavalia a política de uma senha já definida).
 ## 13. Validação manual
 
 Ver `docs/validation/cadastro-redesign.md`.
+
+## 14. Atualização 2026-09-14 — tela deixou de caber sem rolar em aparelhos reais
+
+> Branch: `fix/cadastro-tela-estatica-sem-scroll`. Origem: vídeo do
+> usuário mostrando o card dos campos "atrás" do cabeçalho marrom,
+> arrastável ao toque.
+
+### Causa raiz
+
+O layout original foi calibrado com testes de widget numa viewport de
+400×900 — mais alta que boa parte dos aparelhos Android reais em uso
+(360×800 é uma das resoluções lógicas mais comuns do mercado). Nesse
+tamanho comum, com a checklist de senha já visível por padrão (mostrada
+mesmo antes de qualquer interação, porque uma senha vazia nunca atende
+aos requisitos), o conteúdo **não cabia** de verdade: havia até ~249px
+de rolagem real (medido com `ScrollPosition.maxScrollExtent`, simulando
+status bar + barra de gestos). Como o cabeçalho fica fora do
+`SingleChildScrollView` (não rola) e o card dentro dele é deslocado com
+`Transform.translate`, arrastar esse scroll real fazia o card se
+separar visualmente do cabeçalho — exatamente o que o vídeo mostrou.
+
+### Correção
+
+1. **Layout bem mais compacto**: `contentPadding` dos campos, espaço
+   entre campos, padding do cabeçalho e do card, e tamanho do título
+   foram todos reduzidos; a `Wrap` do checklist de senha ficou mais
+   enxuta. O botão "CRIAR CONTA" usa uma altura mínima de 48 (era 56, o
+   padrão do resto do app) só nesta tela, via um `Theme` local — não
+   afeta nenhum outro botão do app.
+2. **`physics: NeverScrollableScrollPhysics()`** no
+   `SingleChildScrollView` — garantia dura de que nada nesta tela se
+   move ao toque, mesmo que uma combinação futura ainda mais extrema
+   (fonte do sistema muito ampliada, aparelho muito pequeno) volte a
+   gerar alguma sobra de conteúdo. Nesse cenário residual o conteúdo
+   simplesmente é cortado embaixo, em vez de virar arrastável — a tela
+   continua 100% estática, só a rede de segurança contra crash
+   (`RenderFlex overflow`) é que muda de "arrastável" para "cortado".
+3. Logo do cabeçalho: mantido bem maior que o valor original (108px —
+   era 100px antes do pedido de aumento, chegou a 132px, recuado pra
+   108px por causa deste ajuste) — ainda visivelmente maior que o
+   ponto de partida, mas o suficiente pra sobrar espaço real.
+
+### Testes
+
+`maxScrollExtent` agora é exatamente `0` (confirmado por teste,
+simulando status bar/barra de gestos reais) em 360×800 (Android comum),
+393×852 (iPhone 14/15) e 412×915 (Pixel comum) — os três tamanhos mais
+representativos do parque real de aparelhos. Um teste adicional confirma
+que a física de rolagem da tela é sempre `NeverScrollableScrollPhysics`,
+mesmo com fonte do sistema ampliada em 1.6x numa tela de 320×480 (não
+existe cenário em que o card fique arrastável). Aparelhos muito antigos/
+pequenos (ex.: 360×640) ainda podem ter alguma sobra de conteúdo
+cortada — aceito conscientemente, já que não são mais representativos
+do parque de aparelhos atual.
