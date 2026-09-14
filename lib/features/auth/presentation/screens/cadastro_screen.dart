@@ -182,36 +182,34 @@ class _CadastroScreenState extends ConsumerState<CadastroScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
+      // Cabeçalho e card ficam dentro do MESMO SingleChildScrollView, como
+      // uma única Column (mesma estrutura da tela de Login, ver
+      // login_screen.dart) — correção de 2026-09-14, 2ª rodada: com o
+      // cabeçalho FORA do scroll (numa Column separada, versão anterior
+      // desta correção), o Flutter ainda movia o card sozinho ao focar um
+      // campo (EditableText chama Scrollable.ensureVisible() ao ganhar
+      // foco — isso é uma rolagem PROGRAMÁTICA, que
+      // NeverScrollableScrollPhysics não bloqueia, só bloqueia arrasto do
+      // usuário), descolando visualmente o card do cabeçalho fixo. Com os
+      // dois dentro do mesmo scroll, qualquer deslocamento move os dois
+      // juntos — a sobreposição nunca se desfaz, não importa o que
+      // dispare uma tentativa de rolagem.
       body: SafeArea(
-        child: Column(
-          children: [
-            _CadastroHeader(
-              compacto: tecladoAberto,
-              onBack: () => context.pop(),
-            ),
-            Expanded(
-              // SingleChildScrollView aqui não é a solução padrão da tela
-              // (o objetivo é caber numa única viewport, ver seção 4) — é
-              // uma rede de segurança contra overflow em combinações
-              // extremas (fonte do sistema bem ampliada + aparelho
-              // pequeno + teclado aberto), sem nunca quebrar a tela com um
-              // erro de RenderFlex. Em qualquer aparelho normal, o
-              // conteúdo cabe inteiro e isto se comporta como uma Column
-              // comum, sem nenhum indício visual de rolagem.
-              child: SingleChildScrollView(
-                // NeverScrollableScrollPhysics: o usuário pediu
-                // explicitamente que nada nesta tela se mexa ao toque —
-                // mesmo que a rede de segurança contra overflow ainda
-                // exista (o conteúdo simplesmente cabe, então isto nunca
-                // chega a fazer diferença visível em uso normal), o card
-                // não pode ser arrastável (correção de 2026-09-14, vídeo
-                // mostrando o card "atrás" do cabeçalho ao arrastar).
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        child: SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _CadastroHeader(
+                compacto: tecladoAberto,
+                onBack: () => context.pop(),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                 child: Transform.translate(
-                  offset: const Offset(0, -24),
+                  offset: const Offset(0, -32),
                   child: Container(
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+                    padding: const EdgeInsets.fromLTRB(24, 6, 24, 6),
                     decoration: const BoxDecoration(
                       color: AppColors.background,
                       borderRadius: BorderRadius.all(Radius.circular(32)),
@@ -237,21 +235,18 @@ class _CadastroScreenState extends ConsumerState<CadastroScreen> {
                         AnimatedSize(
                           duration: const Duration(milliseconds: 200),
                           child: tecladoAberto
-                              ? const SizedBox(height: 8)
-                              : const Padding(
-                                  padding: EdgeInsets.only(top: 2),
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        'Cadastre seus dados para começar.',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                            color: AppColors.textMuted,
-                                            fontSize: 13),
-                                      ),
-                                      SizedBox(height: 6),
-                                    ],
-                                  ),
+                              ? const SizedBox(height: 6)
+                              : const Column(
+                                  children: [
+                                    Text(
+                                      'Cadastre seus dados para começar.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                          color: AppColors.textMuted,
+                                          fontSize: 13),
+                                    ),
+                                    SizedBox(height: 4),
+                                  ],
                                 ),
                         ),
                         AnimatedBuilder(
@@ -386,7 +381,7 @@ class _CadastroScreenState extends ConsumerState<CadastroScreen> {
                                       color: AppColors.error, fontSize: 13),
                                 ),
                               ],
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 8),
                               // Botão mais baixo que o padrão do app (48 em
                               // vez de 56) só nesta tela, via Theme local —
                               // ajuda a caber sem rolar em aparelhos comuns
@@ -429,8 +424,8 @@ class _CadastroScreenState extends ConsumerState<CadastroScreen> {
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -455,7 +450,7 @@ class _CadastroHeader extends StatelessWidget {
       curve: Curves.easeOut,
       width: double.infinity,
       padding:
-          EdgeInsets.fromLTRB(20, compacto ? 4 : 12, 20, compacto ? 12 : 12),
+          EdgeInsets.fromLTRB(20, compacto ? 4 : 10, 20, compacto ? 12 : 10),
       decoration: const BoxDecoration(
         gradient: AppColors.brandGradient,
         borderRadius: BorderRadius.only(
