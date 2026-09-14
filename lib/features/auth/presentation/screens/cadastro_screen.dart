@@ -427,7 +427,7 @@ class _CadastroHeader extends StatelessWidget {
       curve: Curves.easeOut,
       width: double.infinity,
       padding:
-          EdgeInsets.fromLTRB(20, compacto ? 4 : 12, 20, compacto ? 12 : 28),
+          EdgeInsets.fromLTRB(20, compacto ? 4 : 20, 20, compacto ? 12 : 36),
       decoration: const BoxDecoration(
         gradient: AppColors.brandGradient,
         borderRadius: BorderRadius.only(
@@ -437,6 +437,17 @@ class _CadastroHeader extends StatelessWidget {
       ),
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 200),
+        // layoutBuilder default empilha o conteúdo que está saindo por
+        // cima do que está entrando (Stack), dimensionado pela união dos
+        // dois — com o cabeçalho cheio bem maior que o compacto, essa
+        // união transitória pode passar do espaço disponível numa tela
+        // pequena com teclado bem alto (RenderFlex overflow só durante a
+        // animação, nunca depois de acomodada). Como o AnimatedContainer
+        // já cuida da transição suave do tamanho do próprio cabeçalho,
+        // aqui só precisamos do fade do conteúdo — sem empilhar os dois
+        // estados.
+        layoutBuilder: (currentChild, previousChildren) =>
+            currentChild ?? const SizedBox.shrink(),
         child: compacto
             ? Row(
                 key: const ValueKey('compacto'),
@@ -462,14 +473,15 @@ class _CadastroHeader extends StatelessWidget {
                     alignment: Alignment.topLeft,
                     child: _BotaoVoltar(onBack: onBack),
                   ),
-                  Image.asset('assets/images/logo.png', width: 72, height: 72),
-                  const SizedBox(height: 12),
+                  Image.asset('assets/images/logo.png',
+                      width: 100, height: 100),
+                  const SizedBox(height: 14),
                   const Text(
                     'PetConnect',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: AppColors.textOnBrand,
-                      fontSize: 26,
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
