@@ -91,8 +91,17 @@ void main() {
     expect(find.text('Concluídas'), findsNothing);
     expect(find.text('Canceladas'), findsNothing);
 
-    // Cancelar (RF29, CT20).
+    // Cancelar (RF29, CT20) — exige confirmação desde 2026-09-14 (ver
+    // docs/features/confirmacao-cancelamento-consulta.md).
     await tester.tap(find.widgetWithText(TextButton, 'Cancelar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Cancelar consulta'), findsOneWidget,
+        reason: 'deveria pedir confirmação antes de cancelar de verdade');
+    expect(find.text('Futuras'), findsOneWidget,
+        reason: 'ainda não confirmou — não deveria ter cancelado nada');
+
+    await tester.tap(find.widgetWithText(TextButton, 'Sim, cancelar'));
     await tester.pumpAndSettle();
 
     expect(find.text('Canceladas'), findsOneWidget,
