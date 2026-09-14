@@ -427,7 +427,7 @@ class _CadastroHeader extends StatelessWidget {
       curve: Curves.easeOut,
       width: double.infinity,
       padding:
-          EdgeInsets.fromLTRB(20, compacto ? 4 : 20, 20, compacto ? 12 : 36),
+          EdgeInsets.fromLTRB(20, compacto ? 4 : 28, 20, compacto ? 12 : 44),
       decoration: const BoxDecoration(
         gradient: AppColors.brandGradient,
         borderRadius: BorderRadius.only(
@@ -474,14 +474,14 @@ class _CadastroHeader extends StatelessWidget {
                     child: _BotaoVoltar(onBack: onBack),
                   ),
                   Image.asset('assets/images/logo.png',
-                      width: 100, height: 100),
-                  const SizedBox(height: 14),
+                      width: 132, height: 132),
+                  const SizedBox(height: 16),
                   const Text(
                     'PetConnect',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: AppColors.textOnBrand,
-                      fontSize: 28,
+                      fontSize: 30,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
